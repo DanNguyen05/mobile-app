@@ -1,0 +1,50 @@
+{
+  "expo": {
+    "name": "HealthyCare",
+    "slug": "healthy-care-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#10b981"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.healthycare.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#10b981"
+      },
+      "package": "com.healthycare.app"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow HealthyCare to access your camera for food scanning."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow HealthyCare to access your photos for progress tracking."
+        }
+      ],
+      "expo-secure-store",
+      "expo-asset",
+      "expo-font"
+    ]
+  }
+}

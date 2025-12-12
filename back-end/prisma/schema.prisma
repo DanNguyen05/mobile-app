@@ -1,0 +1,220 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum CalendarCategory {
+  meal
+  activity
+  appointment
+}
+
+enum CalendarModule {
+  meal_plan
+  exercises
+  food_diary
+  messages
+}
+
+enum SuggestionType {
+  nutrition
+  workout
+}
+
+model User {
+  id                   Int                     @id @default(autoincrement())
+  email                String                  @unique
+  passwordHash         String
+  name                 String?
+  age                  Int?
+  gender               String?
+  heightCm             Float?
+  weightKg             Float?
+  neckCm               Float?
+  waistCm              Float?
+  hipCm                Float?
+  bicepsCm             Float?
+  thighCm              Float?
+  goal                 String?
+  activityLevel        String?
+  exercisePreferences  Json?
+  calendarEvents       CalendarEvent[]
+  foodLogs             FoodLog[]
+  workoutLogs          WorkoutLog[]
+  aiSuggestions        AiSuggestion[]
+  aiFeedback           AiFeedback[]
+  chatMessages         ChatMessage[]
+  bodyMeasurements     BodyMeasurement[]
+  progressPhotos       ProgressPhoto[]
+  aiExercisePlanCache  AiExercisePlanCache[]
+  aiMealPlanCache      AiMealPlanCache[]
+  createdAt            DateTime                @default(now())
+  updatedAt            DateTime                @updatedAt
+}
+
+model CalendarEvent {
+  id           Int               @id @default(autoincrement())
+  userId       Int
+  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title        String
+  eventDate    DateTime
+  timeSlot     String
+  category     CalendarCategory
+  location     String?
+  note         String?
+  linkedModule CalendarModule?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+}
+
+model FoodLog {
+  id                   Int      @id @default(autoincrement())
+  userId               Int
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  eatenAt              DateTime
+  mealType             String
+  foodName             String
+  calories             Int
+  proteinGrams         Float
+  carbsGrams           Float
+  fatGrams             Float
+  healthConsideration  String?
+  isCorrected          Boolean  @default(false)
+  amount               String?
+  sugarGrams           Float?
+  status               String?
+  thoughts             String?
+  imageUrl             String?
+  imageAttribution     String?
+  createdAt            DateTime @default(now())
+}
+
+model WorkoutLog {
+  id                       Int      @id @default(autoincrement())
+  userId                   Int
+  user                     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  completedAt              DateTime
+  exerciseName             String
+  durationMinutes          Int
+  caloriesBurnedEstimated  Int
+  isAiSuggested            Boolean  @default(false)
+  createdAt                DateTime @default(now())
+}
+
+model AiSuggestion {
+  id             Int            @id @default(autoincrement())
+  userId         Int
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  generatedAt    DateTime
+  type           SuggestionType
+  isApplied      Boolean        @default(false)
+  contentDetails Json
+  createdAt      DateTime       @default(now())
+}
+
+model DailyStatistics {
+  id                  Int      @id @default(autoincrement())
+  userId              Int
+  date                DateTime @db.Date
+  totalCalories       Int      @default(0)
+  totalProtein        Float    @default(0)
+  totalCarbs          Float    @default(0)
+  totalFat            Float    @default(0)
+  caloriesBurned      Int      @default(0)
+  exerciseDuration    Int      @default(0)
+  mealsCount          Int      @default(0)
+  workoutsCount       Int      @default(0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@unique([userId, date])
+  @@index([userId, date])
+}
+
+model AiFeedback {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planSummary String
+  planPayload Json
+  rating      Int
+  comment     String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+model ChatMessage {
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role          String
+  content       String   @db.Text
+  intent        String?
+  nutritionData Json?
+  exercisePlan  Json?
+  createdAt     DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+model BodyMeasurement {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  measuredAt DateTime @db.Date
+  weightKg   Float
+  neckCm     Float?
+  waistCm    Float?
+  hipCm      Float?
+  bicepsCm   Float?
+  thighCm    Float?
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, measuredAt])
+  @@index([userId, measuredAt])
+}
+
+model ProgressPhoto {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime @db.Date
+  view      String
+  imageUrl  String   @db.Text
+  note      String?
+  createdAt DateTime @default(now())
+
+  @@unique([userId, date, view])
+  @@index([userId, date])
+}
+
+model AiExercisePlanCache {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cacheKey  String
+  plan      Json
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@unique([userId, cacheKey])
+  @@index([userId, expiresAt])
+}
+
+model AiMealPlanCache {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cacheKey  String
+  plan      Json
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@unique([userId, cacheKey])
+  @@index([userId, expiresAt])
+}
