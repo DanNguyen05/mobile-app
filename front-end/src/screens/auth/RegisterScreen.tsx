@@ -34,17 +34,17 @@ export default function RegisterScreen() {
 
   const handleRegister = async () => {
     if (!name || !email || !password || !confirmPassword) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert('Lỗi', 'Vui lòng điền đầy đủ thông tin');
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
+      Alert.alert('Lỗi', 'Mật khẩu không khớp');
       return;
     }
 
     if (password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters');
+      Alert.alert('Lỗi', 'Mật khẩu phải ít nhất 6 ký tự');
       return;
     }
 
@@ -52,7 +52,7 @@ export default function RegisterScreen() {
     try {
       await register({ name, email, password });
     } catch (error: any) {
-      Alert.alert('Registration Failed', error.message || 'Something went wrong');
+      Alert.alert('Đăng ký thất bại', error.message || 'Có lỗi xảy ra');
     } finally {
       setLoading(false);
     }
@@ -71,17 +71,17 @@ export default function RegisterScreen() {
           {/* Header */}
           <View style={styles.header}>
             <Text style={styles.logo}>🥗</Text>
-            <Text style={styles.title}>Create Account</Text>
-            <Text style={styles.subtitle}>Start your health journey today!</Text>
+            <Text style={styles.title}>Tạo tài khoản</Text>
+            <Text style={styles.subtitle}>Bắt đầu hành trình sức khỏe hôm nay!</Text>
           </View>
 
           {/* Form */}
           <View style={styles.form}>
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>Full Name</Text>
+              <Text style={styles.label}>Họ tên</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Enter your name"
+                placeholder="Nhập họ tên"
                 placeholderTextColor={colors.textLight}
                 value={name}
                 onChangeText={setName}
@@ -93,7 +93,7 @@ export default function RegisterScreen() {
               <Text style={styles.label}>Email</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Enter your email"
+                placeholder="Nhập email"
                 placeholderTextColor={colors.textLight}
                 value={email}
                 onChangeText={setEmail}
@@ -104,10 +104,10 @@ export default function RegisterScreen() {
             </View>
 
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>Password</Text>
+              <Text style={styles.label}>Mật khẩu</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Enter your password"
+                placeholder="Nhập mật khẩu"
                 placeholderTextColor={colors.textLight}
                 value={password}
                 onChangeText={setPassword}
@@ -116,10 +116,10 @@ export default function RegisterScreen() {
             </View>
 
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>Confirm Password</Text>
+              <Text style={styles.label}>Xác nhận mật khẩu</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Confirm your password"
+                placeholder="Nhập lại mật khẩu"
                 placeholderTextColor={colors.textLight}
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
@@ -135,16 +135,16 @@ export default function RegisterScreen() {
               {loading ? (
                 <ActivityIndicator color={colors.surface} />
               ) : (
-                <Text style={styles.buttonText}>Sign Up</Text>
+                <Text style={styles.buttonText}>Đăng ký</Text>
               )}
             </TouchableOpacity>
           </View>
 
           {/* Footer */}
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Already have an account?</Text>
+            <Text style={styles.footerText}>Đã có tài khoản?</Text>
             <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-              <Text style={styles.footerLink}>Login</Text>
+              <Text style={styles.footerLink}>Đăng nhập</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>

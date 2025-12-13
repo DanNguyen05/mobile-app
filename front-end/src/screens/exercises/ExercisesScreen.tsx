@@ -13,21 +13,24 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { format } from 'date-fns';
 import { Ionicons } from '@expo/vector-icons';
 
 import { api, type WorkoutLog } from '../../services/api';
 import { colors, spacing, borderRadius } from '../../context/ThemeContext';
+import ScreenBackground from '../../components/ScreenBackground';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const EXERCISE_TYPES = [
-  { id: 'running', name: 'Running', icon: '🏃', caloriesPerMin: 10 },
-  { id: 'walking', name: 'Walking', icon: '🚶', caloriesPerMin: 5 },
-  { id: 'cycling', name: 'Cycling', icon: '🚴', caloriesPerMin: 8 },
-  { id: 'swimming', name: 'Swimming', icon: '🏊', caloriesPerMin: 11 },
+  { id: 'running', name: 'Chạy bộ', icon: '🏃', caloriesPerMin: 10 },
+  { id: 'walking', name: 'Đi bộ', icon: '🚶', caloriesPerMin: 5 },
+  { id: 'cycling', name: 'Đạp xe', icon: '🚴', caloriesPerMin: 8 },
+  { id: 'swimming', name: 'Bơi lội', icon: '🏊', caloriesPerMin: 11 },
   { id: 'yoga', name: 'Yoga', icon: '🧘', caloriesPerMin: 4 },
-  { id: 'gym', name: 'Weight Training', icon: '🏋️', caloriesPerMin: 6 },
+  { id: 'gym', name: 'Tập tạ', icon: '🏋️', caloriesPerMin: 6 },
   { id: 'hiit', name: 'HIIT', icon: '💪', caloriesPerMin: 12 },
-  { id: 'other', name: 'Other', icon: '⚡', caloriesPerMin: 5 },
+  { id: 'other', name: 'Khác', icon: '⚡', caloriesPerMin: 5 },
 ];
 
 export default function ExercisesScreen() {
@@ -67,6 +70,13 @@ export default function ExercisesScreen() {
     load();
   }, [fetchWorkouts]);
 
+  // Refresh data when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      fetchWorkouts();
+    }, [fetchWorkouts])
+  );
+
   const onRefresh = async () => {
     setRefreshing(true);
     await fetchWorkouts();
@@ -81,13 +91,13 @@ export default function ExercisesScreen() {
 
   const handleAddWorkout = async () => {
     if (!duration) {
-      Alert.alert('Error', 'Please enter duration');
+      Alert.alert('Lỗi', 'Vui lòng nhập thời lượng');
       return;
     }
 
     const durationMin = parseInt(duration);
     if (isNaN(durationMin) || durationMin <= 0) {
-      Alert.alert('Error', 'Please enter a valid duration');
+      Alert.alert('Lỗi', 'Vui lòng nhập thời lượng hợp lệ');
       return;
     }
 
@@ -106,26 +116,26 @@ export default function ExercisesScreen() {
       resetForm();
       setModalVisible(false);
       await fetchWorkouts();
-      Alert.alert('Success', 'Workout logged successfully!');
+      Alert.alert('Thành công', 'Ghi nhận bài tập thành công!');
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to log workout');
+      Alert.alert('Lỗi', error.message || 'Không thể ghi nhận bài tập');
     } finally {
       setSaving(false);
     }
   };
 
   const handleDeleteWorkout = async (logId: number) => {
-    Alert.alert('Delete Workout', 'Are you sure you want to delete this workout?', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert('Xóa bài tập', 'Bạn có chắc chắn muốn xóa bài tập này?', [
+      { text: 'Hủy', style: 'cancel' },
       {
-        text: 'Delete',
+        text: 'Xóa',
         style: 'destructive',
         onPress: async () => {
           try {
             await api.deleteWorkoutLog(logId);
             await fetchWorkouts();
           } catch (error: any) {
-            Alert.alert('Error', error.message || 'Failed to delete');
+            Alert.alert('Lỗi', error.message || 'Không thể xóa');
           }
         },
       },
@@ -138,80 +148,104 @@ export default function ExercisesScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
-      </SafeAreaView>
+      <ScreenBackground>
+        <SafeAreaView style={{ flex: 1 }}>
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            <ActivityIndicator size="large" color={colors.primary} />
+          </View>
+        </SafeAreaView>
+      </ScreenBackground>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Exercises</Text>
-        <Text style={styles.date}>{format(new Date(), 'EEEE, MMM d')}</Text>
-      </View>
+    <ScreenBackground>
+      <SafeAreaView style={styles.container}>
+        {/* Header with gradient */}
+        <LinearGradient
+          colors={['#FF6B6B', '#EE5A52']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.headerGradient}
+        >
+          <Text style={styles.title}>💪 Bài tập</Text>
+          <Text style={styles.date}>{format(new Date(), 'EEEE, MMM d')}</Text>
+        </LinearGradient>
 
-      {/* Summary */}
-      <View style={styles.summaryRow}>
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryIcon}>🔥</Text>
-          <Text style={styles.summaryValue}>{totalCaloriesBurned}</Text>
-          <Text style={styles.summaryLabel}>Calories Burned</Text>
+        {/* Summary Cards */}
+        <View style={styles.summaryRow}>
+          <View style={styles.summaryCard}>
+            <View style={[styles.iconContainer, { backgroundColor: '#FF6B6B' }]}>
+              <Text style={styles.summaryIcon}>🔥</Text>
+            </View>
+            <Text style={styles.summaryValue}>{totalCaloriesBurned}</Text>
+            <Text style={styles.summaryLabel}>Calo đốt</Text>
+          </View>
+          <View style={styles.summaryCard}>
+            <View style={[styles.iconContainer, { backgroundColor: '#FFB84D' }]}>
+              <Text style={styles.summaryIcon}>⏱️</Text>
+            </View>
+            <Text style={styles.summaryValue}>{totalDuration}</Text>
+            <Text style={styles.summaryLabel}>Phút</Text>
+          </View>
+          <View style={styles.summaryCard}>
+            <View style={[styles.iconContainer, { backgroundColor: '#10b981' }]}>
+              <Text style={styles.summaryIcon}>💪</Text>
+            </View>
+            <Text style={styles.summaryValue}>{workouts.length}</Text>
+            <Text style={styles.summaryLabel}>Bài tập</Text>
+          </View>
         </View>
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryIcon}>⏱️</Text>
-          <Text style={styles.summaryValue}>{totalDuration}</Text>
-          <Text style={styles.summaryLabel}>Minutes</Text>
-        </View>
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryIcon}>💪</Text>
-          <Text style={styles.summaryValue}>{workouts.length}</Text>
-          <Text style={styles.summaryLabel}>Workouts</Text>
-        </View>
-      </View>
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
-        <Text style={styles.sectionTitle}>Today's Workouts</Text>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>🏃 Bài tập hôm nay</Text>
+          <Text style={styles.sectionCount}>{workouts.length} bài</Text>
+        </View>
         
         {workouts.length > 0 ? (
-          workouts.map((workout) => (
-            <TouchableOpacity
-              key={workout.log_id}
-              style={styles.workoutCard}
-              onLongPress={() => handleDeleteWorkout(workout.log_id)}
-            >
-              <View style={styles.workoutIcon}>
-                <Text style={styles.workoutIconText}>
-                  {EXERCISE_TYPES.find(e => 
-                    e.name.toLowerCase() === workout.exercise_name.toLowerCase()
-                  )?.icon || '⚡'}
-                </Text>
-              </View>
-              <View style={styles.workoutInfo}>
-                <Text style={styles.workoutName}>{workout.exercise_name}</Text>
-                <Text style={styles.workoutTime}>
-                  {format(new Date(workout.completed_at), 'h:mm a')}
-                </Text>
-              </View>
-              <View style={styles.workoutStats}>
-                <Text style={styles.workoutDuration}>{workout.duration_minutes} min</Text>
-                <Text style={styles.workoutCalories}>
-                  {workout.calories_burned_estimated} kcal
-                </Text>
-              </View>
-            </TouchableOpacity>
-          ))
+          <View style={styles.workoutsContainer}>
+            {workouts.map((workout) => (
+              <TouchableOpacity
+                key={workout.log_id}
+                style={styles.workoutCard}
+                onLongPress={() => handleDeleteWorkout(workout.log_id)}
+              >
+                <View style={styles.workoutIconBig}>
+                  <Text style={styles.workoutIconText}>
+                    {EXERCISE_TYPES.find(e => 
+                      e.name.toLowerCase() === workout.exercise_name.toLowerCase()
+                    )?.icon || '⚡'}
+                  </Text>
+                </View>
+                <View style={styles.workoutInfo}>
+                  <Text style={styles.workoutName}>{workout.exercise_name}</Text>
+                  <Text style={styles.workoutTime}>
+                    {format(new Date(workout.completed_at), 'h:mm a')}
+                  </Text>
+                </View>
+                <View style={styles.workoutStats}>
+                  <View style={styles.statBadge}>
+                    <Text style={styles.workoutDuration}>{workout.duration_minutes} min</Text>
+                  </View>
+                  <View style={[styles.statBadge, { backgroundColor: '#FFF7ED' }]}>
+                    <Text style={styles.workoutCalories}>
+                      {workout.calories_burned_estimated} kcal
+                    </Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
         ) : (
           <View style={styles.emptyState}>
             <Text style={styles.emptyStateIcon}>🏃</Text>
-            <Text style={styles.emptyStateText}>No workouts today</Text>
+            <Text style={styles.emptyStateText}>Chưa có bài tập nào hôm nay</Text>
             <Text style={styles.emptyStateSubtext}>
-              Start moving to track your progress!
+              Bắt đầu vận động để theo dõi tiến trình!
             </Text>
           </View>
         )}
@@ -227,14 +261,14 @@ export default function ExercisesScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Log Workout</Text>
+              <Text style={styles.modalTitle}>Ghi nhận bài tập</Text>
               <TouchableOpacity onPress={() => setModalVisible(false)}>
                 <Ionicons name="close" size={24} color={colors.text} />
               </TouchableOpacity>
             </View>
 
             <ScrollView style={styles.modalBody}>
-              <Text style={styles.label}>Exercise Type</Text>
+              <Text style={styles.label}>Loại bài tập</Text>
               <View style={styles.exerciseGrid}>
                 {EXERCISE_TYPES.map((exercise) => (
                   <TouchableOpacity
@@ -258,10 +292,10 @@ export default function ExercisesScreen() {
 
               {selectedExercise.id === 'other' && (
                 <View style={styles.inputContainer}>
-                  <Text style={styles.label}>Exercise Name</Text>
+                  <Text style={styles.label}>Tên bài tập</Text>
                   <TextInput
                     style={styles.input}
-                    placeholder="Enter exercise name"
+                    placeholder="Nhập tên bài tập"
                     placeholderTextColor={colors.textLight}
                     value={customName}
                     onChangeText={setCustomName}
@@ -270,10 +304,10 @@ export default function ExercisesScreen() {
               )}
 
               <View style={styles.inputContainer}>
-                <Text style={styles.label}>Duration (minutes) *</Text>
+                <Text style={styles.label}>Thời lượng (phút) *</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="e.g., 30"
+                  placeholder="Ví dụ: 30"
                   placeholderTextColor={colors.textLight}
                   value={duration}
                   onChangeText={setDuration}
@@ -283,7 +317,7 @@ export default function ExercisesScreen() {
 
               {duration && !isNaN(parseInt(duration)) && (
                 <View style={styles.caloriesPreview}>
-                  <Text style={styles.caloriesPreviewLabel}>Estimated calories burned:</Text>
+                  <Text style={styles.caloriesPreviewLabel}>Dự kiến đốt calo:</Text>
                   <Text style={styles.caloriesPreviewValue}>
                     ~{parseInt(duration) * selectedExercise.caloriesPerMin} kcal
                   </Text>
@@ -299,135 +333,205 @@ export default function ExercisesScreen() {
               {saving ? (
                 <ActivityIndicator color={colors.surface} />
               ) : (
-                <Text style={styles.saveButtonText}>Log Workout</Text>
+                <Text style={styles.saveButtonText}>Lưu</Text>
               )}
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
     </SafeAreaView>
+    </ScreenBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: 'transparent',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  header: {
-    padding: spacing.md,
-    paddingBottom: 0,
+  headerGradient: {
+    marginHorizontal: spacing.md,
+    marginTop: spacing.sm,
+    marginBottom: spacing.md,
+    padding: spacing.lg,
+    borderRadius: borderRadius.xl,
+    shadowColor: '#FF6B6B',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: colors.text,
+    color: '#fff',
+    letterSpacing: -0.5,
   },
   date: {
     fontSize: 14,
-    color: colors.textSecondary,
-    marginTop: 2,
+    color: 'rgba(255,255,255,0.9)',
+    marginTop: 4,
+    fontWeight: '500',
   },
   summaryRow: {
     flexDirection: 'row',
-    padding: spacing.md,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.md,
     gap: spacing.sm,
   },
   summaryCard: {
     flex: 1,
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.lg,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    borderRadius: borderRadius.xl,
     padding: spacing.md,
     alignItems: 'center',
+    gap: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255,107,107,0.08)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  iconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   summaryIcon: {
-    fontSize: 24,
-    marginBottom: spacing.xs,
+    fontSize: 16,
   },
   summaryValue: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '700',
     color: colors.text,
   },
   summaryLabel: {
     fontSize: 11,
     color: colors.textSecondary,
-    marginTop: 2,
+    fontWeight: '600',
   },
   scrollContent: {
     padding: spacing.md,
     paddingTop: 0,
     paddingBottom: 100,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.text,
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: spacing.md,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.text,
+    letterSpacing: -0.3,
+  },
+  sectionCount: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    backgroundColor: 'rgba(255,107,107,0.1)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  workoutsContainer: {
+    gap: spacing.sm,
   },
   workoutCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.lg,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    borderRadius: borderRadius.xl,
     padding: spacing.md,
-    marginBottom: spacing.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(255,107,107,0.08)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  workoutIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.primaryLight,
+  workoutIconBig: {
+    width: 52,
+    height: 52,
+    borderRadius: borderRadius.lg,
+    backgroundColor: '#FFF7ED',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: spacing.md,
+    borderWidth: 2,
+    borderColor: 'rgba(255,107,107,0.2)',
   },
   workoutIconText: {
-    fontSize: 24,
+    fontSize: 26,
   },
   workoutInfo: {
     flex: 1,
   },
   workoutName: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
     color: colors.text,
+    letterSpacing: -0.2,
   },
   workoutTime: {
     fontSize: 13,
     color: colors.textSecondary,
     marginTop: 2,
+    fontWeight: '500',
   },
   workoutStats: {
+    gap: 6,
     alignItems: 'flex-end',
   },
+  statBadge: {
+    backgroundColor: '#F0FDF4',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
   workoutDuration: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text,
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#10b981',
   },
   workoutCalories: {
     fontSize: 13,
-    color: colors.primary,
-    marginTop: 2,
+    fontWeight: '700',
+    color: '#FF6B6B',
   },
   emptyState: {
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.lg,
+    backgroundColor: 'rgba(255,255,255,0.7)',
+    borderRadius: borderRadius.xl,
     padding: spacing.xxl,
     alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,107,107,0.1)',
+    borderStyle: 'dashed',
   },
   emptyStateIcon: {
     fontSize: 48,
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
+    opacity: 0.5,
   },
   emptyStateText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
     color: colors.text,
   },
@@ -438,12 +542,12 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    bottom: 24,
+    bottom: 40,
     right: 24,
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: colors.primary,
+    backgroundColor: '#FF6B6B',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
@@ -451,16 +555,19 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 5,
+    borderWidth: 0,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: colors.surface,
-    borderTopLeftRadius: borderRadius.xl,
-    borderTopRightRadius: borderRadius.xl,
+    backgroundColor: 'rgba(255,255,255,0.98)',
+    borderTopLeftRadius: borderRadius.xl * 1.5,
+    borderTopRightRadius: borderRadius.xl * 1.5,
+    borderWidth: 2,
+    borderColor: 'rgba(255,107,107,0.2)',
     maxHeight: '85%',
   },
   modalHeader: {

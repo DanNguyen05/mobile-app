@@ -7,6 +7,9 @@ const router = express.Router();
 // Food recognition
 router.post('/recognize-food', requireAuth, aiController.recognizeFood);
 
+// Recognize food and save to food log in one step
+router.post('/recognize-and-save-food', requireAuth, aiController.recognizeAndSaveFood);
+
 // Exercise plan generation
 router.post('/exercise-plan', requireAuth, aiController.generateExercisePlan);
 

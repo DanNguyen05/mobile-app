@@ -74,6 +74,55 @@ export const recognizeFoodFromImage = async (
 };
 
 /**
+ * Phân tích đồ ăn từ ảnh và tự động lưu vào food log
+ */
+export const analyzeAndSaveFood = async (
+  base64Image: string,
+  mealType?: 'breakfast' | 'lunch' | 'dinner' | 'snack'
+): Promise<{ analysis: AnalysisResult; foodLogId?: number; error?: string }> => {
+  try {
+    const response = await http.request<{
+      success: boolean;
+      data: AnalysisResult;
+      foodLog?: { id: number; eatenAt: string; mealType: string };
+      message?: string;
+    }>(
+      '/api/ai/recognize-and-save-food',
+      {
+        method: 'POST',
+        json: { 
+          base64Image,
+          mealType,
+          eatenAt: new Date().toISOString(),
+        },
+      }
+    );
+    
+    if (!response.success) {
+      throw new Error('Failed to recognize and save food');
+    }
+
+    return {
+      analysis: response.data,
+      foodLogId: response.foodLog?.id,
+    };
+  } catch (error: any) {
+    return {
+      analysis: {
+        foodName: 'Không xác định',
+        amount: '100g',
+        calories: 0,
+        protein: 0,
+        carbs: 0,
+        fat: 0,
+        sugar: 0,
+      },
+      error: error.message || 'Không thể nhận diện và lưu đồ ăn',
+    };
+  }
+};
+
+/**
  * Phân tích đồ ăn từ ảnh và trả về thông tin dinh dưỡng chi tiết
  */
 export const analyzeFood = async (

@@ -14,6 +14,12 @@ export const getDailyStatistics = async (req, res) => {
       return res.status(401).json({ error: 'User ID is required' });
     }
 
+    // Validate userId is a valid number
+    const userIdNum = Number(userId);
+    if (isNaN(userIdNum)) {
+      return res.status(400).json({ error: 'Invalid user ID' });
+    }
+
     if (!date) {
       return res.status(400).json({ error: 'Date parameter is required (format: YYYY-MM-DD)' });
     }
@@ -25,7 +31,7 @@ export const getDailyStatistics = async (req, res) => {
     const [foodStats, workoutStats] = await Promise.all([
       prisma.foodLog.aggregate({
         where: {
-          userId: Number(userId),
+          userId: userIdNum,
           eatenAt: {
             gte: targetDate,
             lt: nextDay,
@@ -41,7 +47,7 @@ export const getDailyStatistics = async (req, res) => {
       }),
       prisma.workoutLog.aggregate({
         where: {
-          userId: Number(userId),
+          userId: userIdNum,
           completedAt: {
             gte: targetDate,
             lt: nextDay,
@@ -79,10 +85,22 @@ export const getWeeklyStatistics = async (req, res) => {
     const userId = req.user?.id || req.query.userId;
     const { startDate, endDate } = req.query;
 
+    if (!userId) {
+      return res.status(401).json({ 
+        error: 'User authentication required' 
+      });
+    }
+
     if (!startDate || !endDate) {
       return res.status(400).json({ 
         error: 'startDate and endDate parameters are required (format: YYYY-MM-DD)' 
       });
+    }
+
+    // Validate userId is a valid number
+    const userIdNum = Number(userId);
+    if (isNaN(userIdNum)) {
+      return res.status(400).json({ error: 'Invalid user ID' });
     }
 
     const start = parseDateOnly(startDate);
@@ -92,7 +110,7 @@ export const getWeeklyStatistics = async (req, res) => {
     const [foodLogs, workoutLogs] = await Promise.all([
       prisma.foodLog.findMany({
         where: {
-          userId: Number(userId),
+          userId: userIdNum,
           eatenAt: { gte: start, lt: end },
         },
         select: {
@@ -105,7 +123,7 @@ export const getWeeklyStatistics = async (req, res) => {
       }),
       prisma.workoutLog.findMany({
         where: {
-          userId: Number(userId),
+          userId: userIdNum,
           completedAt: { gte: start, lt: end },
         },
         select: {

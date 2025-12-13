@@ -17,22 +17,22 @@ import { api } from '../../services/api';
 import { colors, spacing, borderRadius } from '../../context/ThemeContext';
 
 const GOALS = [
-  { id: 'lose_weight', label: 'Lose Weight', icon: '📉' },
-  { id: 'maintain', label: 'Maintain Weight', icon: '⚖️' },
-  { id: 'gain_weight', label: 'Gain Weight', icon: '💪' },
+  { id: 'lose_weight', label: 'Giảm cân', icon: '📉' },
+  { id: 'maintain', label: 'Duy trì cân nặng', icon: '⚖️' },
+  { id: 'gain_weight', label: 'Tăng cân', icon: '💪' },
 ];
 
 const ACTIVITY_LEVELS = [
-  { id: 'sedentary', label: 'Sedentary', description: 'Little or no exercise' },
-  { id: 'light', label: 'Light', description: '1-3 days/week' },
-  { id: 'moderate', label: 'Moderate', description: '3-5 days/week' },
-  { id: 'active', label: 'Active', description: '6-7 days/week' },
-  { id: 'very_active', label: 'Very Active', description: 'Hard exercise daily' },
+  { id: 'sedentary', label: 'Ít vận động', description: 'Ít hoặc không tập' },
+  { id: 'light', label: 'Nhẹ nhàng', description: '1-3 ngày/tuần' },
+  { id: 'moderate', label: 'Trung bình', description: '3-5 ngày/tuần' },
+  { id: 'active', label: 'Năng động', description: '6-7 ngày/tuần' },
+  { id: 'very_active', label: 'Rất năng động', description: 'Tập nặng mỗi ngày' },
 ];
 
 const GENDERS = [
-  { id: 'male', label: 'Male', icon: '👨' },
-  { id: 'female', label: 'Female', icon: '👩' },
+  { id: 'male', label: 'Nam', icon: '👨' },
+  { id: 'female', label: 'Nữ', icon: '👩' },
 ];
 
 export default function OnboardingScreen() {
@@ -52,19 +52,19 @@ export default function OnboardingScreen() {
 
   const handleNext = () => {
     if (step === 1 && (!gender || !age)) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert('Lỗi', 'Vui lòng điền đầy đủ thông tin');
       return;
     }
     if (step === 2 && (!height || !weight)) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert('Lỗi', 'Vui lòng điền đầy đủ thông tin');
       return;
     }
     if (step === 3 && !goal) {
-      Alert.alert('Error', 'Please select a goal');
+      Alert.alert('Lỗi', 'Vui lòng chọn mục tiêu');
       return;
     }
     if (step === 4 && !activityLevel) {
-      Alert.alert('Error', 'Please select activity level');
+      Alert.alert('Lỗi', 'Vui lòng chọn mức độ hoạt động');
       return;
     }
 
@@ -94,7 +94,7 @@ export default function OnboardingScreen() {
       });
       await refreshUser();
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to save profile');
+      Alert.alert('Lỗi', error.message || 'Không thể lưu hồ sơ');
     } finally {
       setLoading(false);
     }
@@ -102,10 +102,10 @@ export default function OnboardingScreen() {
 
   const renderStep1 = () => (
     <View style={styles.stepContent}>
-      <Text style={styles.stepTitle}>Basic Information</Text>
-      <Text style={styles.stepSubtitle}>Tell us about yourself</Text>
+      <Text style={styles.stepTitle}>Thông tin cơ bản</Text>
+      <Text style={styles.stepSubtitle}>Cho chúng tôi biết về bạn</Text>
 
-      <Text style={styles.label}>Gender</Text>
+      <Text style={styles.label}>Giới tính</Text>
       <View style={styles.optionRow}>
         {GENDERS.map((g) => (
           <TouchableOpacity
@@ -122,10 +122,10 @@ export default function OnboardingScreen() {
       </View>
 
       <View style={styles.inputContainer}>
-        <Text style={styles.label}>Age</Text>
+        <Text style={styles.label}>Tuổi</Text>
         <TextInput
           style={styles.input}
-          placeholder="Enter your age"
+          placeholder="Nhập tuổi của bạn"
           placeholderTextColor={colors.textLight}
           value={age}
           onChangeText={setAge}
@@ -137,14 +137,14 @@ export default function OnboardingScreen() {
 
   const renderStep2 = () => (
     <View style={styles.stepContent}>
-      <Text style={styles.stepTitle}>Body Measurements</Text>
-      <Text style={styles.stepSubtitle}>Your current measurements</Text>
+      <Text style={styles.stepTitle}>Đo lường cơ thể</Text>
+      <Text style={styles.stepSubtitle}>Các chỉ số hiện tại của bạn</Text>
 
       <View style={styles.inputContainer}>
-        <Text style={styles.label}>Height (cm)</Text>
+        <Text style={styles.label}>Chiều cao (cm)</Text>
         <TextInput
           style={styles.input}
-          placeholder="e.g., 170"
+          placeholder="Ví dụ: 170"
           placeholderTextColor={colors.textLight}
           value={height}
           onChangeText={setHeight}
@@ -153,10 +153,10 @@ export default function OnboardingScreen() {
       </View>
 
       <View style={styles.inputContainer}>
-        <Text style={styles.label}>Weight (kg)</Text>
+        <Text style={styles.label}>Cân nặng (kg)</Text>
         <TextInput
           style={styles.input}
-          placeholder="e.g., 70"
+          placeholder="Ví dụ: 70"
           placeholderTextColor={colors.textLight}
           value={weight}
           onChangeText={setWeight}
@@ -168,8 +168,8 @@ export default function OnboardingScreen() {
 
   const renderStep3 = () => (
     <View style={styles.stepContent}>
-      <Text style={styles.stepTitle}>Your Goal</Text>
-      <Text style={styles.stepSubtitle}>What do you want to achieve?</Text>
+      <Text style={styles.stepTitle}>Mục tiêu của bạn</Text>
+      <Text style={styles.stepSubtitle}>Bạn muốn đạt được điều gì?</Text>
 
       {GOALS.map((g) => (
         <TouchableOpacity
@@ -188,8 +188,8 @@ export default function OnboardingScreen() {
 
   const renderStep4 = () => (
     <View style={styles.stepContent}>
-      <Text style={styles.stepTitle}>Activity Level</Text>
-      <Text style={styles.stepSubtitle}>How active are you?</Text>
+      <Text style={styles.stepTitle}>Mức độ hoạt động</Text>
+      <Text style={styles.stepSubtitle}>Bạn hoạt động nhiều thế nào?</Text>
 
       {ACTIVITY_LEVELS.map((a) => (
         <TouchableOpacity
@@ -213,7 +213,7 @@ export default function OnboardingScreen() {
         <View style={styles.progressBar}>
           <View style={[styles.progressFill, { width: `${(step / totalSteps) * 100}%` }]} />
         </View>
-        <Text style={styles.progressText}>Step {step} of {totalSteps}</Text>
+        <Text style={styles.progressText}>Bước {step} / {totalSteps}</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -227,7 +227,7 @@ export default function OnboardingScreen() {
       <View style={styles.navigation}>
         {step > 1 && (
           <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-            <Text style={styles.backButtonText}>Back</Text>
+            <Text style={styles.backButtonText}>Quay lại</Text>
           </TouchableOpacity>
         )}
         <TouchableOpacity
@@ -239,7 +239,7 @@ export default function OnboardingScreen() {
             <ActivityIndicator color={colors.surface} />
           ) : (
             <Text style={styles.nextButtonText}>
-              {step === totalSteps ? 'Complete' : 'Next'}
+              {step === totalSteps ? 'Hoàn tất' : 'Tiếp tục'}
             </Text>
           )}
         </TouchableOpacity>

@@ -32,9 +32,9 @@ export default function SettingsScreen() {
   const [weight, setWeight] = useState(user?.weight_kg?.toString() || '');
 
   const handleLogout = () => {
-    Alert.alert('Logout', 'Are you sure you want to logout?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Logout', style: 'destructive', onPress: logout },
+    Alert.alert('Đăng xuất', 'Bạn có chắc chắn muốn đăng xuất?', [
+      { text: 'Hủy', style: 'cancel' },
+      { text: 'Đăng xuất', style: 'destructive', onPress: logout },
     ]);
   };
 
@@ -49,9 +49,9 @@ export default function SettingsScreen() {
       });
       await refreshUser();
       setEditModalVisible(false);
-      Alert.alert('Success', 'Profile updated successfully!');
+      Alert.alert('Thành công', 'Cập nhật hồ sơ thành công!');
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to update profile');
+      Alert.alert('Lỗi', error.message || 'Không thể cập nhật hồ sơ');
     } finally {
       setSaving(false);
     }
@@ -68,7 +68,7 @@ export default function SettingsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Settings</Text>
+        <Text style={styles.title}>Cài đặt</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -80,7 +80,7 @@ export default function SettingsScreen() {
             </Text>
           </View>
           <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>{user?.name || 'User'}</Text>
+            <Text style={styles.profileName}>{user?.name || 'Người dùng'}</Text>
             <Text style={styles.profileEmail}>{user?.email}</Text>
           </View>
           <TouchableOpacity style={styles.editButton} onPress={openEditModal}>
@@ -92,28 +92,28 @@ export default function SettingsScreen() {
         <View style={styles.statsRow}>
           <View style={styles.statItem}>
             <Text style={styles.statValue}>{user?.height_cm || '--'}</Text>
-            <Text style={styles.statLabel}>Height (cm)</Text>
+            <Text style={styles.statLabel}>Chiều cao (cm)</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
             <Text style={styles.statValue}>{user?.weight_kg || '--'}</Text>
-            <Text style={styles.statLabel}>Weight (kg)</Text>
+            <Text style={styles.statLabel}>Cân nặng (kg)</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
             <Text style={styles.statValue}>{user?.age || '--'}</Text>
-            <Text style={styles.statLabel}>Age</Text>
+            <Text style={styles.statLabel}>Tuổi</Text>
           </View>
         </View>
 
         {/* Settings Sections */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Preferences</Text>
+          <Text style={styles.sectionTitle}>Tùy chỉnh</Text>
           
           <View style={styles.settingItem}>
             <View style={styles.settingLeft}>
               <Ionicons name="notifications-outline" size={22} color={colors.text} />
-              <Text style={styles.settingLabel}>Push Notifications</Text>
+              <Text style={styles.settingLabel}>Thông báo đẩy</Text>
             </View>
             <Switch
               value={notifications}
@@ -126,7 +126,7 @@ export default function SettingsScreen() {
           <TouchableOpacity style={styles.settingItem}>
             <View style={styles.settingLeft}>
               <Ionicons name="fitness-outline" size={22} color={colors.text} />
-              <Text style={styles.settingLabel}>Goal: {user?.goal?.replace('_', ' ') || 'Not set'}</Text>
+              <Text style={styles.settingLabel}>Mục tiêu: {user?.goal?.replace('_', ' ') || 'Chưa đặt'}</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
           </TouchableOpacity>
@@ -135,7 +135,7 @@ export default function SettingsScreen() {
             <View style={styles.settingLeft}>
               <Ionicons name="walk-outline" size={22} color={colors.text} />
               <Text style={styles.settingLabel}>
-                Activity: {user?.activity_level?.replace('_', ' ') || 'Not set'}
+                Mức độ hoạt động: {user?.activity_level?.replace('_', ' ') || 'Chưa đặt'}
               </Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
@@ -143,12 +143,12 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Support</Text>
+          <Text style={styles.sectionTitle}>Hỗ trợ</Text>
           
           <TouchableOpacity style={styles.settingItem}>
             <View style={styles.settingLeft}>
               <Ionicons name="help-circle-outline" size={22} color={colors.text} />
-              <Text style={styles.settingLabel}>Help & FAQ</Text>
+              <Text style={styles.settingLabel}>Trợ giúp & FAQ</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
           </TouchableOpacity>
@@ -156,7 +156,7 @@ export default function SettingsScreen() {
           <TouchableOpacity style={styles.settingItem}>
             <View style={styles.settingLeft}>
               <Ionicons name="document-text-outline" size={22} color={colors.text} />
-              <Text style={styles.settingLabel}>Privacy Policy</Text>
+              <Text style={styles.settingLabel}>Chính sách bảo mật</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
           </TouchableOpacity>
@@ -164,7 +164,7 @@ export default function SettingsScreen() {
           <TouchableOpacity style={styles.settingItem}>
             <View style={styles.settingLeft}>
               <Ionicons name="information-circle-outline" size={22} color={colors.text} />
-              <Text style={styles.settingLabel}>About</Text>
+              <Text style={styles.settingLabel}>Giới thiệu</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
           </TouchableOpacity>
@@ -173,10 +173,10 @@ export default function SettingsScreen() {
         {/* Logout */}
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Ionicons name="log-out-outline" size={22} color={colors.error} />
-          <Text style={styles.logoutText}>Logout</Text>
+          <Text style={styles.logoutText}>Đăng xuất</Text>
         </TouchableOpacity>
 
-        <Text style={styles.version}>Version 1.0.0</Text>
+        <Text style={styles.version}>Phiên bản 1.0.0</Text>
       </ScrollView>
 
       {/* Edit Profile Modal */}
@@ -184,7 +184,7 @@ export default function SettingsScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Edit Profile</Text>
+              <Text style={styles.modalTitle}>Chỉnh sửa hồ sơ</Text>
               <TouchableOpacity onPress={() => setEditModalVisible(false)}>
                 <Ionicons name="close" size={24} color={colors.text} />
               </TouchableOpacity>
@@ -192,10 +192,10 @@ export default function SettingsScreen() {
 
             <ScrollView style={styles.modalBody}>
               <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Name</Text>
+                <Text style={styles.inputLabel}>Tên</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="Your name"
+                  placeholder="Tên của bạn"
                   placeholderTextColor={colors.textLight}
                   value={name}
                   onChangeText={setName}
@@ -203,10 +203,10 @@ export default function SettingsScreen() {
               </View>
 
               <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Age</Text>
+                <Text style={styles.inputLabel}>Tuổi</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="Your age"
+                  placeholder="Tuổi của bạn"
                   placeholderTextColor={colors.textLight}
                   value={age}
                   onChangeText={setAge}
@@ -215,10 +215,10 @@ export default function SettingsScreen() {
               </View>
 
               <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Height (cm)</Text>
+                <Text style={styles.inputLabel}>Chiều cao (cm)</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="Your height"
+                  placeholder="Chiều cao của bạn"
                   placeholderTextColor={colors.textLight}
                   value={height}
                   onChangeText={setHeight}
@@ -227,10 +227,10 @@ export default function SettingsScreen() {
               </View>
 
               <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Weight (kg)</Text>
+                <Text style={styles.inputLabel}>Cân nặng (kg)</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="Your weight"
+                  placeholder="Cân nặng của bạn"
                   placeholderTextColor={colors.textLight}
                   value={weight}
                   onChangeText={setWeight}
@@ -247,7 +247,7 @@ export default function SettingsScreen() {
               {saving ? (
                 <ActivityIndicator color={colors.surface} />
               ) : (
-                <Text style={styles.saveButtonText}>Save Changes</Text>
+                <Text style={styles.saveButtonText}>Lưu thay đổi</Text>
               )}
             </TouchableOpacity>
           </View>

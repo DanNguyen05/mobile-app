@@ -3,6 +3,7 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '../context/AuthContext';
 import { colors } from '../context/ThemeContext';
@@ -16,9 +17,10 @@ import OnboardingScreen from '../screens/onboarding/OnboardingScreen';
 import DashboardScreen from '../screens/dashboard/DashboardScreen';
 import FoodDiaryScreen from '../screens/foodDiary/FoodDiaryScreen';
 import ExercisesScreen from '../screens/exercises/ExercisesScreen';
-import ProgressScreen from '../screens/progress/ProgressScreen';
 import MessagesScreen from '../screens/messages/MessagesScreen';
-import SettingsScreen from '../screens/settings/SettingsScreen';
+
+// Stack Navigators
+import { UtilitiesStackNavigator } from './UtilitiesStackNavigator';
 
 // Types
 export type RootStackParamList = {
@@ -37,8 +39,7 @@ export type MainTabParamList = {
   FoodDiary: undefined;
   Messages: undefined;
   Exercises: undefined;
-  Progress: undefined;
-  Settings: undefined;
+  Utilities: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -54,62 +55,59 @@ const AuthNavigator = () => (
 );
 
 // Main Tab Navigator
-const MainTabNavigator = () => (
-  <Tab.Navigator
-    screenOptions={({ route }) => ({
-      headerShown: false,
-      tabBarActiveTintColor: colors.primary,
-      tabBarInactiveTintColor: colors.textSecondary,
-      tabBarStyle: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        paddingBottom: 8,
-        paddingTop: 8,
-        height: 64,
-        backgroundColor: colors.surface,
-        borderTopWidth: 1,
-        borderTopColor: colors.border,
-        elevation: 8,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: -2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-      },
-      tabBarLabelStyle: {
-        fontSize: 12,
-        fontWeight: '500',
-      },
-      tabBarIcon: ({ focused, color, size }) => {
-        let iconName: keyof typeof Ionicons.glyphMap = 'home';
+const MainTabNavigator = () => {
+  const insets = useSafeAreaInsets();
 
-        if (route.name === 'Dashboard') {
-          iconName = focused ? 'home' : 'home-outline';
-        } else if (route.name === 'FoodDiary') {
-          iconName = focused ? 'restaurant' : 'restaurant-outline';
-        } else if (route.name === 'Messages') {
-          iconName = focused ? 'chatbubbles' : 'chatbubbles-outline';
-        } else if (route.name === 'Exercises') {
-          iconName = focused ? 'fitness' : 'fitness-outline';
-        } else if (route.name === 'Progress') {
-          iconName = focused ? 'bar-chart' : 'bar-chart-outline';
-        } else if (route.name === 'Settings') {
-          iconName = focused ? 'settings' : 'settings-outline';
-        }
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textSecondary,
+        tabBarStyle: {
+          height: 60 + insets.bottom,
+          paddingBottom: insets.bottom,
+          paddingTop: 8,
+          backgroundColor: colors.surface,
+          borderTopWidth: 1,
+          borderTopColor: colors.border,
+          elevation: 8,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '500',
+        },
+        tabBarIcon: ({ focused, color, size }) => {
+          let iconName: keyof typeof Ionicons.glyphMap = 'home';
 
-        return <Ionicons name={iconName} size={size} color={color} />;
-      },
-    })}
-  >
-    <Tab.Screen name="Dashboard" component={DashboardScreen} options={{ title: 'Home' }} />
-    <Tab.Screen name="FoodDiary" component={FoodDiaryScreen} options={{ title: 'Food' }} />
-    <Tab.Screen name="Messages" component={MessagesScreen} options={{ title: 'AI Chat' }} />
-    <Tab.Screen name="Exercises" component={ExercisesScreen} options={{ title: 'Exercise' }} />
-    <Tab.Screen name="Progress" component={ProgressScreen} options={{ title: 'Progress' }} />
-    <Tab.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
-  </Tab.Navigator>
-);
+          if (route.name === 'Dashboard') {
+            iconName = focused ? 'home' : 'home-outline';
+          } else if (route.name === 'FoodDiary') {
+            iconName = focused ? 'restaurant' : 'restaurant-outline';
+          } else if (route.name === 'Messages') {
+            iconName = focused ? 'chatbubbles' : 'chatbubbles-outline';
+          } else if (route.name === 'Exercises') {
+            iconName = focused ? 'fitness' : 'fitness-outline';
+          } else if (route.name === 'Utilities') {
+            iconName = focused ? 'grid' : 'grid-outline';
+          }
+
+          return <Ionicons name={iconName} size={size} color={color} />;
+        },
+      })}
+    >
+      <Tab.Screen name="Dashboard" component={DashboardScreen} options={{ title: 'Trang chủ' }} />
+      <Tab.Screen name="FoodDiary" component={FoodDiaryScreen} options={{ title: 'Ăn uống' }} />
+      <Tab.Screen name="Messages" component={MessagesScreen} options={{ title: 'AI Chat' }} />
+      <Tab.Screen name="Exercises" component={ExercisesScreen} options={{ title: 'Tập luyện' }} />
+      <Tab.Screen name="Utilities" component={UtilitiesStackNavigator} options={{ title: 'Tiện ích' }} />
+    </Tab.Navigator>
+  );
+};
 
 // App Navigator
 export const AppNavigator = () => {

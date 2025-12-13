@@ -16,9 +16,9 @@ export const colors = {
   textLight: '#9ca3af',
   border: '#e5e7eb',
   // Nutrition colors
-  protein: '#10b981',
-  carbs: '#FFB84D',
-  fat: '#FCA5A5',
+  protein: '#8B5CF6',  // Purple - dễ phân biệt
+  carbs: '#FFB84D',     // Orange - giữ nguyên
+  fat: '#EF4444',       // Red - đậm hơn, dễ nhìn
 };
 
 export const spacing = {

@@ -32,7 +32,7 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert('Lỗi', 'Vui lòng điền đầy đủ thông tin');
       return;
     }
 
@@ -40,7 +40,7 @@ export default function LoginScreen() {
     try {
       await login(email, password);
     } catch (error: any) {
-      Alert.alert('Login Failed', error.message || 'Invalid email or password');
+      Alert.alert('Đăng nhập thất bại', error.message || 'Email hoặc mật khẩu không đúng');
     } finally {
       setLoading(false);
     }
@@ -60,7 +60,7 @@ export default function LoginScreen() {
           <View style={styles.header}>
             <Text style={styles.logo}>🥗</Text>
             <Text style={styles.title}>HealthyCare</Text>
-            <Text style={styles.subtitle}>Welcome back! Please login to continue.</Text>
+            <Text style={styles.subtitle}>Chào mừng trở lại! Vui lòng đăng nhập.</Text>
           </View>
 
           {/* Form */}
@@ -69,7 +69,7 @@ export default function LoginScreen() {
               <Text style={styles.label}>Email</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Enter your email"
+                placeholder="Nhập email của bạn"
                 placeholderTextColor={colors.textLight}
                 value={email}
                 onChangeText={setEmail}
@@ -80,10 +80,10 @@ export default function LoginScreen() {
             </View>
 
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>Password</Text>
+              <Text style={styles.label}>Mật khẩu</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Enter your password"
+                placeholder="Nhập mật khẩu"
                 placeholderTextColor={colors.textLight}
                 value={password}
                 onChangeText={setPassword}
@@ -99,16 +99,16 @@ export default function LoginScreen() {
               {loading ? (
                 <ActivityIndicator color={colors.surface} />
               ) : (
-                <Text style={styles.buttonText}>Login</Text>
+                <Text style={styles.buttonText}>Đăng nhập</Text>
               )}
             </TouchableOpacity>
           </View>
 
           {/* Footer */}
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Don't have an account?</Text>
+            <Text style={styles.footerText}>Chưa có tài khoản?</Text>
             <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-              <Text style={styles.footerLink}>Sign Up</Text>
+              <Text style={styles.footerLink}>Đăng ký</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>

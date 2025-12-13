@@ -149,27 +149,57 @@ export const api = {
   // Food Log
   getFoodLog: (): Promise<FoodLog[]> => http.request('/api/food-log'),
   addFoodLog: (data: {
-    foodName?: string;
+    food_name?: string;
     calories?: number;
-    protein?: number;
-    carbs?: number;
-    fat?: number;
-    mealType?: string;
-    eatenAt?: string;
-    healthConsideration?: string;
+    protein_g?: number;
+    carbs_g?: number;
+    fat_g?: number;
+    meal_type?: string;
+    eaten_at?: string;
+    health_consideration?: string;
     amount?: string;
     sugar?: number;
-    imageUrl?: string;
-  }): Promise<FoodLog> =>
-    http.request('/api/food-log', { method: 'POST', json: data }),
+    image_url?: string;
+  }): Promise<FoodLog> => {
+    // Map snake_case to camelCase for backend
+    const payload = {
+      foodName: data.food_name,
+      calories: data.calories,
+      protein: data.protein_g,
+      carbs: data.carbs_g,
+      fat: data.fat_g,
+      mealType: data.meal_type,
+      eatenAt: data.eaten_at,
+      healthConsideration: data.health_consideration,
+      amount: data.amount,
+      sugar: data.sugar,
+      imageUrl: data.image_url,
+    };
+    return http.request('/api/food-log', { method: 'POST', json: payload });
+  },
   deleteFoodLog: (logId: number): Promise<void> =>
     http.request(`/api/food-log/${logId}`, { method: 'DELETE' }),
 
   // Workout Log
   getWorkoutLog: (params?: { start?: string; end?: string }): Promise<WorkoutLog[]> =>
     http.request('/api/workout-log', { params }),
-  addWorkoutLog: (data: Partial<WorkoutLog>): Promise<WorkoutLog> =>
-    http.request('/api/workout-log', { method: 'POST', json: data }),
+  addWorkoutLog: (data: {
+    exercise_name?: string;
+    duration_minutes?: number;
+    calories_burned_estimated?: number;
+    completed_at?: string;
+    is_ai_suggested?: boolean;
+  }): Promise<WorkoutLog> => {
+    // Map snake_case to camelCase for backend
+    const payload = {
+      exerciseName: data.exercise_name,
+      durationMinutes: data.duration_minutes,
+      caloriesBurnedEstimated: data.calories_burned_estimated,
+      completedAt: data.completed_at,
+      isAiSuggested: data.is_ai_suggested,
+    };
+    return http.request('/api/workout-log', { method: 'POST', json: payload });
+  },
   deleteWorkoutLog: (logId: number): Promise<void> =>
     http.request(`/api/workout-log/${logId}`, { method: 'DELETE' }),
 

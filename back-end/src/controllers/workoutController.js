@@ -14,7 +14,13 @@ export const getWorkoutLogs = async (req, res) => {
       return res.status(401).json({ error: 'User ID is required' });
     }
 
-    const where = { userId: Number(userId) };
+    // Validate userId is a valid number
+    const userIdNum = Number(userId);
+    if (isNaN(userIdNum)) {
+      return res.status(400).json({ error: 'Invalid user ID' });
+    }
+
+    const where = { userId: userIdNum };
 
     if (start || end) {
       where.completedAt = {};

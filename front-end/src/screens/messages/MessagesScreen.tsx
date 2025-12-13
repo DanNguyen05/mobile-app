@@ -12,13 +12,14 @@ import {
   ActivityIndicator,
   Image,
   Alert,
+  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 
 import { api } from '../../services/api';
-import { chatWithAI, analyzeFood, generateExercisePlan, type AIExercisePlan, type UserProfileContext } from '../../services/aiService';
+import { chatWithAI, analyzeFood, analyzeAndSaveFood, generateExercisePlan, type AIExercisePlan, type UserProfileContext } from '../../services/aiService';
 import { useAuth } from '../../context/AuthContext';
 import { colors, spacing, borderRadius } from '../../context/ThemeContext';
 
@@ -45,19 +46,70 @@ interface ChatHistoryItem {
 }
 
 const QUICK_REPLIES = [
-  '🍽️ Phân tích đồ ăn',
-  '🔥 Hôm nay tôi ăn bao nhiêu calo?',
-  '💪 Gợi ý bài tập',
-  '📊 Tiến trình của tôi',
-  '🥗 Gợi ý thực đơn healthy',
+  { text: '📸 Phân tích đồ ăn', icon: 'camera-outline' },
+  { text: '🔥 Hôm nay ăn bao nhiêu calo?', icon: 'flame-outline' },
+  { text: '💪 Gợi ý bài tập', icon: 'barbell-outline' },
+  { text: '📊 Tiến trình của tôi', icon: 'stats-chart-outline' },
+  { text: '🥗 Gợi ý thực đơn healthy', icon: 'restaurant-outline' },
 ];
+
+// Typing indicator component
+const TypingIndicator = () => {
+  const dot1 = useRef(new Animated.Value(0)).current;
+  const dot2 = useRef(new Animated.Value(0)).current;
+  const dot3 = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const animate = (dot: Animated.Value, delay: number) => {
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(delay),
+          Animated.timing(dot, {
+            toValue: 1,
+            duration: 400,
+            useNativeDriver: true,
+          }),
+          Animated.timing(dot, {
+            toValue: 0,
+            duration: 400,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    };
+
+    animate(dot1, 0);
+    animate(dot2, 200);
+    animate(dot3, 400);
+  }, []);
+
+  const animatedStyle = (dot: Animated.Value) => ({
+    opacity: dot,
+    transform: [
+      {
+        translateY: dot.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0, -6],
+        }),
+      },
+    ],
+  });
+
+  return (
+    <View style={styles.typingIndicator}>
+      <Animated.View style={[styles.typingDot, animatedStyle(dot1)]} />
+      <Animated.View style={[styles.typingDot, animatedStyle(dot2)]} />
+      <Animated.View style={[styles.typingDot, animatedStyle(dot3)]} />
+    </View>
+  );
+};
 
 export default function MessagesScreen() {
   const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: 'Xin chào! Tôi là trợ lý AI sức khỏe của bạn. Tôi có thể:\n\n📸 Nhận diện đồ ăn từ ảnh\n💪 Gợi ý bài tập phù hợp\n🍽️ Tư vấn dinh dưỡng\n📊 Theo dõi tiến trình\n\nBạn cần giúp gì hôm nay?',
+      text: 'Xin chào! 👋 Tôi là trợ lý AI sức khỏe.\n\nTôi có thể hỗ trợ bạn:\n\n📸 Nhận diện món ăn qua ảnh\n💪 Tư vấn bài tập phù hợp\n🥗 Gợi ý thực đơn healthy\n📊 Phân tích tiến trình\n\nHãy hỏi tôi bất cứ điều gì! 😊',
       isUser: false,
       timestamp: new Date(),
     },
@@ -79,7 +131,9 @@ export default function MessagesScreen() {
 
   // Auto scroll to bottom
   useEffect(() => {
-    scrollViewRef.current?.scrollToEnd({ animated: true });
+    setTimeout(() => {
+      scrollViewRef.current?.scrollToEnd({ animated: true });
+    }, 100);
   }, [messages]);
 
   // Counter for unique IDs
@@ -116,7 +170,7 @@ export default function MessagesScreen() {
     setChatHistory(newHistory);
 
     // Add loading message
-    const loadingId = addMessage({ text: '...', isUser: false, isLoading: true });
+    const loadingId = addMessage({ text: '', isUser: false, isLoading: true });
 
     try {
       // Check for workout/exercise intent
@@ -157,7 +211,7 @@ export default function MessagesScreen() {
     } catch (error: any) {
       console.error('AI chat error:', error);
       updateMessage(loadingId, {
-        text: 'Xin lỗi, tôi gặp sự cố kỹ thuật. Vui lòng thử lại sau. 🙏',
+        text: 'Xin lỗi, đã có lỗi xảy ra. Vui lòng thử lại! 🙏',
         isLoading: false,
       });
     } finally {
@@ -196,8 +250,15 @@ export default function MessagesScreen() {
         const loadingId = addMessage({ text: 'Đang nhận diện đồ ăn...', isUser: false, isLoading: true });
 
         try {
-          // Analyze food from image
-          const { analysis, error } = await analyzeFood(asset.base64 || '');
+          // Analyze food from image and save automatically
+          const now = new Date();
+          const hour = now.getHours();
+          const mealType = 
+            hour >= 5 && hour < 11 ? 'breakfast' :
+            hour >= 11 && hour < 14 ? 'lunch' :
+            hour >= 18 && hour < 22 ? 'dinner' : 'snack';
+
+          const { analysis, foodLogId, error } = await analyzeAndSaveFood(asset.base64 || '', mealType);
 
           if (error || !analysis.foodName || analysis.foodName === 'Không xác định') {
             updateMessage(loadingId, {
@@ -205,50 +266,17 @@ export default function MessagesScreen() {
               isLoading: false,
             });
           } else {
-            // Save to food diary
-            try {
-              const now = new Date();
-              const hour = now.getHours();
-              const mealType = 
-                hour >= 5 && hour < 11 ? 'breakfast' :
-                hour >= 11 && hour < 14 ? 'lunch' :
-                hour >= 18 && hour < 22 ? 'dinner' : 'snack';
-
-              await api.addFoodLog({
+            updateMessage(loadingId, {
+              text: `✅ **${analysis.foodName}** - ${analysis.amount}\n\n📊 Thông tin dinh dưỡng:\n• Calories: ${analysis.calories} kcal\n• Protein: ${analysis.protein}g\n• Carbs: ${analysis.carbs}g\n• Fat: ${analysis.fat}g\n\n✅ Đã lưu vào nhật ký ăn uống! (ID: ${foodLogId})`,
+              isLoading: false,
+              nutritionData: {
                 foodName: analysis.foodName,
                 calories: analysis.calories,
                 protein: analysis.protein,
                 carbs: analysis.carbs,
                 fat: analysis.fat,
-                mealType,
-                eatenAt: now.toISOString(),
-                amount: analysis.amount,
-              });
-
-              updateMessage(loadingId, {
-                text: `✅ **${analysis.foodName}** - ${analysis.amount}\n\n📊 Thông tin dinh dưỡng:\n• Calories: ${analysis.calories} kcal\n• Protein: ${analysis.protein}g\n• Carbs: ${analysis.carbs}g\n• Fat: ${analysis.fat}g\n\n✅ Đã lưu vào nhật ký ăn uống!`,
-                isLoading: false,
-                nutritionData: {
-                  foodName: analysis.foodName,
-                  calories: analysis.calories,
-                  protein: analysis.protein,
-                  carbs: analysis.carbs,
-                  fat: analysis.fat,
-                },
-              });
-            } catch (saveError) {
-              updateMessage(loadingId, {
-                text: `✅ **${analysis.foodName}** - ${analysis.amount}\n\n📊 Thông tin dinh dưỡng:\n• Calories: ${analysis.calories} kcal\n• Protein: ${analysis.protein}g\n• Carbs: ${analysis.carbs}g\n• Fat: ${analysis.fat}g\n\n⚠️ Không thể lưu vào nhật ký (kiểm tra kết nối)`,
-                isLoading: false,
-                nutritionData: {
-                  foodName: analysis.foodName,
-                  calories: analysis.calories,
-                  protein: analysis.protein,
-                  carbs: analysis.carbs,
-                  fat: analysis.fat,
-                },
-              });
-            }
+              },
+            });
           }
         } catch (analysisError: any) {
           console.error('Food analysis error:', analysisError);
@@ -289,7 +317,15 @@ export default function MessagesScreen() {
         const loadingId = addMessage({ text: 'Đang nhận diện đồ ăn...', isUser: false, isLoading: true });
 
         try {
-          const { analysis, error } = await analyzeFood(asset.base64 || '');
+          // Analyze food from gallery image and save automatically
+          const now = new Date();
+          const hour = now.getHours();
+          const mealType = 
+            hour >= 5 && hour < 11 ? 'breakfast' :
+            hour >= 11 && hour < 14 ? 'lunch' :
+            hour >= 18 && hour < 22 ? 'dinner' : 'snack';
+
+          const { analysis, foodLogId, error } = await analyzeAndSaveFood(asset.base64 || '', mealType);
 
           if (error || !analysis.foodName || analysis.foodName === 'Không xác định') {
             updateMessage(loadingId, {
@@ -298,7 +334,7 @@ export default function MessagesScreen() {
             });
           } else {
             updateMessage(loadingId, {
-              text: `✅ **${analysis.foodName}** - ${analysis.amount}\n\n📊 Thông tin dinh dưỡng:\n• Calories: ${analysis.calories} kcal\n• Protein: ${analysis.protein}g\n• Carbs: ${analysis.carbs}g\n• Fat: ${analysis.fat}g`,
+              text: `✅ **${analysis.foodName}** - ${analysis.amount}\n\n📊 Thông tin dinh dưỡng:\n• Calories: ${analysis.calories} kcal\n• Protein: ${analysis.protein}g\n• Carbs: ${analysis.carbs}g\n• Fat: ${analysis.fat}g\n\n✅ Đã lưu vào nhật ký ăn uống! (ID: ${foodLogId})`,
               isLoading: false,
               nutritionData: {
                 foodName: analysis.foodName,
@@ -323,8 +359,8 @@ export default function MessagesScreen() {
     }
   };
 
-  const handleQuickReply = (reply: string) => {
-    if (reply.includes('Phân tích đồ ăn')) {
+  const handleQuickReply = (reply: { text: string; icon: string }) => {
+    if (reply.text.includes('Phân tích đồ ăn')) {
       Alert.alert(
         'Phân tích đồ ăn',
         'Chọn nguồn ảnh',
@@ -335,7 +371,7 @@ export default function MessagesScreen() {
         ]
       );
     } else {
-      handleSend(reply);
+      handleSend(reply.text);
     }
   };
 
@@ -352,7 +388,7 @@ export default function MessagesScreen() {
             setMessages([
               {
                 id: '1',
-                text: 'Xin chào! Tôi là trợ lý AI sức khỏe của bạn. Bạn cần giúp gì?',
+                text: 'Xin chào! 👋 Tôi là trợ lý AI sức khỏe.\n\nTôi có thể hỗ trợ bạn:\n\n📸 Nhận diện món ăn qua ảnh\n💪 Tư vấn bài tập phù hợp\n🥗 Gợi ý thực đơn healthy\n📊 Phân tích tiến trình\n\nHãy hỏi tôi bất cứ điều gì! 😊',
                 isUser: false,
                 timestamp: new Date(),
               },
@@ -366,32 +402,24 @@ export default function MessagesScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Simple Header */}
       <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>🤖</Text>
-          </View>
-          <View style={styles.headerTextContainer}>
-            <Text style={styles.headerTitle}>AI Health Assistant</Text>
-            <Text style={styles.headerSubtitle}>
-              {loading ? 'Đang xử lý...' : 'Online'}
-            </Text>
-          </View>
-          <TouchableOpacity onPress={clearChat} style={styles.clearButton}>
-            <Ionicons name="trash-outline" size={20} color={colors.error} />
-          </TouchableOpacity>
-        </View>
+        <Text style={styles.headerTitle}>Trợ lý AI</Text>
+        <TouchableOpacity onPress={clearChat} style={styles.clearButton} activeOpacity={0.7}>
+          <Ionicons name="refresh-outline" size={22} color={colors.textSecondary} />
+        </TouchableOpacity>
       </View>
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.keyboardView}
-        keyboardVerticalOffset={100}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
         <ScrollView
           ref={scrollViewRef}
           style={styles.messagesContainer}
           contentContainerStyle={styles.messagesContent}
+          showsVerticalScrollIndicator={false}
         >
           {messages.map((message) => (
             <View
@@ -401,11 +429,6 @@ export default function MessagesScreen() {
                 message.isUser ? styles.userWrapper : styles.aiWrapper,
               ]}
             >
-              {!message.isUser && (
-                <View style={styles.messageAvatar}>
-                  <Text>🤖</Text>
-                </View>
-              )}
               <View
                 style={[
                   styles.messageBubble,
@@ -413,70 +436,107 @@ export default function MessagesScreen() {
                 ]}
               >
                 {message.imageUri && (
-                  <Image
-                    source={{ uri: message.imageUri }}
-                    style={styles.messageImage}
-                    resizeMode="cover"
-                  />
+                  <View style={styles.imageContainer}>
+                    <Image
+                      source={{ uri: message.imageUri }}
+                      style={styles.messageImage}
+                      resizeMode="cover"
+                    />
+                  </View>
                 )}
                 
                 {message.isLoading ? (
                   <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="small" color={colors.primary} />
-                    <Text style={styles.loadingText}>Đang xử lý...</Text>
+                    <TypingIndicator />
                   </View>
                 ) : (
-                  <Text
-                    style={[
-                      styles.messageText,
-                      message.isUser ? styles.userText : styles.aiText,
-                    ]}
-                  >
-                    {message.text}
-                  </Text>
+                  <>
+                    <Text
+                      style={[
+                        styles.messageText,
+                        message.isUser ? styles.userText : styles.aiText,
+                      ]}
+                    >
+                      {message.text}
+                    </Text>
+                    <Text style={[
+                      styles.timestamp,
+                      message.isUser ? styles.timestampUser : styles.timestampAI
+                    ]}>
+                      {message.timestamp.toLocaleTimeString('vi-VN', { 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                      })}
+                    </Text>
+                  </>
                 )}
 
-                {/* Nutrition Card */}
+                {/* Enhanced Nutrition Card */}
                 {message.nutritionData && (
                   <View style={styles.nutritionCard}>
-                    <View style={styles.nutritionRow}>
+                    <View style={styles.nutritionHeader}>
+                      <Ionicons name="nutrition-outline" size={16} color={colors.primary} />
+                      <Text style={styles.nutritionHeaderText}>Thông tin dinh dưỡng</Text>
+                    </View>
+                    <View style={styles.nutritionGrid}>
                       <View style={styles.nutritionItem}>
+                        <View style={[styles.nutritionIconBg, { backgroundColor: '#FEF3C7' }]}>
+                          <Ionicons name="flame" size={18} color="#F59E0B" />
+                        </View>
                         <Text style={styles.nutritionValue}>
                           {message.nutritionData.calories}
                         </Text>
                         <Text style={styles.nutritionLabel}>kcal</Text>
                       </View>
                       <View style={styles.nutritionItem}>
+                        <View style={[styles.nutritionIconBg, { backgroundColor: colors.primaryLight }]}>
+                          <Ionicons name="barbell" size={18} color={colors.primary} />
+                        </View>
                         <Text style={styles.nutritionValue}>
                           {message.nutritionData.protein}g
                         </Text>
                         <Text style={styles.nutritionLabel}>Protein</Text>
                       </View>
                       <View style={styles.nutritionItem}>
+                        <View style={[styles.nutritionIconBg, { backgroundColor: '#FECACA' }]}>
+                          <Ionicons name="fast-food" size={18} color="#EF4444" />
+                        </View>
                         <Text style={styles.nutritionValue}>
                           {message.nutritionData.carbs}g
                         </Text>
                         <Text style={styles.nutritionLabel}>Carbs</Text>
                       </View>
                       <View style={styles.nutritionItem}>
+                        <View style={[styles.nutritionIconBg, { backgroundColor: '#E0E7FF' }]}>
+                          <Ionicons name="water" size={18} color="#6366F1" />
+                        </View>
                         <Text style={styles.nutritionValue}>
                           {message.nutritionData.fat}g
                         </Text>
-                        <Text style={styles.nutritionLabel}>Fat</Text>
+                        <Text style={styles.nutritionLabel}>Béo</Text>
                       </View>
                     </View>
                   </View>
                 )}
 
-                {/* Exercise Plan Card */}
+                {/* Enhanced Exercise Plan Card */}
                 {message.exercisePlan && (
                   <View style={styles.exerciseCard}>
-                    <View style={styles.exerciseHeader}>
-                      <Text style={styles.exerciseIntensity}>
-                        {message.exercisePlan.intensity.toUpperCase()}
-                      </Text>
+                    <View style={styles.exerciseCardHeader}>
+                      <View style={styles.exerciseTitleRow}>
+                        <Ionicons name="barbell" size={18} color={colors.primary} />
+                        <Text style={styles.exerciseCardTitle}>Kế hoạch tập luyện</Text>
+                      </View>
+                      <View style={styles.exerciseBadge}>
+                        <Text style={styles.exerciseIntensity}>
+                          {message.exercisePlan.intensity.toUpperCase()}
+                        </Text>
+                      </View>
+                    </View>
+                    <View style={styles.exerciseBurnContainer}>
+                      <Ionicons name="flame" size={16} color="#EF4444" />
                       <Text style={styles.exerciseBurn}>
-                        🔥 {message.exercisePlan.totalBurnEstimate}
+                        {message.exercisePlan.totalBurnEstimate}
                       </Text>
                     </View>
                   </View>
@@ -485,69 +545,89 @@ export default function MessagesScreen() {
             </View>
           ))}
 
-          {/* Quick Replies */}
+          {/* Enhanced Quick Replies */}
           {messages.length <= 2 && !loading && (
             <View style={styles.quickRepliesContainer}>
-              <Text style={styles.quickRepliesTitle}>Gợi ý nhanh:</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <View style={styles.quickReplies}>
-                  {QUICK_REPLIES.map((reply, index) => (
-                    <TouchableOpacity
-                      key={index}
-                      style={styles.quickReplyButton}
-                      onPress={() => handleQuickReply(reply)}
-                    >
-                      <Text style={styles.quickReplyText}>{reply}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
+              <Text style={styles.quickRepliesTitle}>💡 Gợi ý nhanh cho bạn</Text>
+              <ScrollView 
+                horizontal 
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.quickRepliesScroll}
+              >
+                {QUICK_REPLIES.map((reply, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    onPress={() => handleQuickReply(reply)}
+                    activeOpacity={0.7}
+                    style={styles.quickReplyButton}
+                  >
+                    <Ionicons name={reply.icon as any} size={18} color={colors.primary} />
+                    <Text style={styles.quickReplyText}>{reply.text}</Text>
+                  </TouchableOpacity>
+                ))}
               </ScrollView>
             </View>
           )}
         </ScrollView>
 
-        <View style={styles.inputContainer}>
-          <TouchableOpacity
-            style={styles.attachButton}
-            onPress={handleImagePick}
-            disabled={loading}
-          >
-            <Ionicons name="camera" size={24} color={colors.primary} />
-          </TouchableOpacity>
-          
-          <TouchableOpacity
-            style={styles.attachButton}
-            onPress={handleGalleryPick}
-            disabled={loading}
-          >
-            <Ionicons name="image" size={24} color={colors.primary} />
-          </TouchableOpacity>
+        {/* Enhanced Input Container */}
+        <View style={styles.inputWrapper}>
+          <View style={styles.inputContainer}>
+            <TouchableOpacity
+              style={[styles.iconButton, loading && styles.iconButtonDisabled]}
+              onPress={handleImagePick}
+              disabled={loading}
+              activeOpacity={0.7}
+            >
+              <Ionicons 
+                name="camera" 
+                size={22} 
+                color={loading ? colors.textLight : colors.primary} 
+              />
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={[styles.iconButton, loading && styles.iconButtonDisabled]}
+              onPress={handleGalleryPick}
+              disabled={loading}
+              activeOpacity={0.7}
+            >
+              <Ionicons 
+                name="image" 
+                size={22} 
+                color={loading ? colors.textLight : colors.primary} 
+              />
+            </TouchableOpacity>
 
-          <TextInput
-            style={styles.input}
-            placeholder="Nhập tin nhắn..."
-            placeholderTextColor={colors.textLight}
-            value={inputText}
-            onChangeText={setInputText}
-            multiline
-            maxLength={500}
-            editable={!loading}
-          />
-          
-          <TouchableOpacity
-            style={[
-              styles.sendButton,
-              (!inputText.trim() || loading) && styles.sendButtonDisabled,
-            ]}
-            onPress={() => handleSend()}
-            disabled={!inputText.trim() || loading}
-          >
-            <Ionicons
-              name="send"
-              size={20}
-              color={inputText.trim() && !loading ? colors.surface : colors.textLight}
-            />
-          </TouchableOpacity>
+            <View style={styles.inputBox}>
+              <TextInput
+                style={styles.input}
+                placeholder="Nhập tin nhắn..."
+                placeholderTextColor={colors.textLight}
+                value={inputText}
+                onChangeText={setInputText}
+                multiline
+                maxLength={500}
+                editable={!loading}
+              />
+            </View>
+            
+            <TouchableOpacity
+              style={[
+                styles.sendButton,
+                (!inputText.trim() || loading) && styles.sendButtonDisabled,
+              ]}
+              onPress={() => handleSend()}
+              disabled={!inputText.trim() || loading}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name="send"
+                size={18}
+                color="#fff"
+              />
+            </TouchableOpacity>
+          </View>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -560,39 +640,19 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   header: {
-    backgroundColor: colors.surface,
-    paddingHorizontal: spacing.md,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
-  headerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.primaryLight,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: spacing.md,
-  },
-  avatarText: {
-    fontSize: 24,
-  },
-  headerTextContainer: {
-    flex: 1,
-  },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 24,
+    fontWeight: '700',
     color: colors.text,
-  },
-  headerSubtitle: {
-    fontSize: 13,
-    color: colors.primary,
   },
   clearButton: {
     padding: spacing.sm,
@@ -605,30 +665,19 @@ const styles = StyleSheet.create({
   },
   messagesContent: {
     padding: spacing.md,
-    paddingBottom: 100, // Extra space to avoid tab bar
+    paddingBottom: 100,
   },
   messageWrapper: {
-    flexDirection: 'row',
     marginBottom: spacing.md,
-    alignItems: 'flex-end',
+    maxWidth: '85%',
   },
   userWrapper: {
-    justifyContent: 'flex-end',
+    alignSelf: 'flex-end',
   },
   aiWrapper: {
-    justifyContent: 'flex-start',
-  },
-  messageAvatar: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: colors.primaryLight,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: spacing.xs,
+    alignSelf: 'flex-start',
   },
   messageBubble: {
-    maxWidth: '80%',
     padding: spacing.md,
     borderRadius: borderRadius.lg,
   },
@@ -642,11 +691,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  messageImage: {
-    width: 200,
-    height: 150,
-    borderRadius: borderRadius.md,
+  imageContainer: {
     marginBottom: spacing.sm,
+    borderRadius: borderRadius.md,
+    overflow: 'hidden',
+  },
+  messageImage: {
+    width: 220,
+    height: 165,
+    borderRadius: borderRadius.md,
   },
   messageText: {
     fontSize: 15,
@@ -658,117 +711,204 @@ const styles = StyleSheet.create({
   aiText: {
     color: colors.text,
   },
+  timestamp: {
+    fontSize: 11,
+    marginTop: 6,
+    fontWeight: '500',
+  },
+  timestampUser: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    textAlign: 'right',
+  },
+  timestampAI: {
+    color: colors.textLight,
+  },
   loadingContainer: {
+    paddingVertical: spacing.sm,
+  },
+  typingIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 4,
   },
-  loadingText: {
-    marginLeft: spacing.sm,
-    color: colors.textSecondary,
-    fontSize: 14,
+  typingDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.primary,
   },
   nutritionCard: {
-    marginTop: spacing.sm,
-    padding: spacing.sm,
-    backgroundColor: colors.primaryLight,
+    marginTop: spacing.md,
+    padding: spacing.md,
+    backgroundColor: colors.background,
     borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  nutritionRow: {
+  nutritionHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+    gap: 6,
+  },
+  nutritionHeaderText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  nutritionGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: spacing.xs,
   },
   nutritionItem: {
+    flex: 1,
     alignItems: 'center',
+    padding: spacing.sm,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.sm,
+  },
+  nutritionIconBg: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.xs,
   },
   nutritionValue: {
     fontSize: 16,
     fontWeight: '700',
-    color: colors.primary,
+    color: colors.text,
+    marginBottom: 2,
   },
   nutritionLabel: {
     fontSize: 11,
     color: colors.textSecondary,
+    fontWeight: '500',
   },
   exerciseCard: {
-    marginTop: spacing.sm,
-    padding: spacing.sm,
-    backgroundColor: '#FEF3C7',
+    marginTop: spacing.md,
+    padding: spacing.md,
+    backgroundColor: colors.background,
     borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  exerciseHeader: {
+  exerciseCardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  exerciseTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  exerciseCardTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  exerciseBadge: {
+    backgroundColor: colors.primaryLight,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: borderRadius.sm,
   },
   exerciseIntensity: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
-    color: '#D97706',
-    backgroundColor: '#FDE68A',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderRadius: borderRadius.sm,
+    color: colors.primary,
+  },
+  exerciseBurnContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingTop: spacing.xs,
   },
   exerciseBurn: {
     fontSize: 13,
-    color: '#B45309',
+    color: colors.text,
     fontWeight: '600',
   },
   quickRepliesContainer: {
     marginTop: spacing.lg,
+    marginBottom: spacing.md,
   },
   quickRepliesTitle: {
     fontSize: 13,
+    fontWeight: '600',
     color: colors.textSecondary,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.md,
+    paddingHorizontal: spacing.xs,
   },
-  quickReplies: {
-    flexDirection: 'row',
+  quickRepliesScroll: {
+    paddingHorizontal: spacing.xs,
     gap: spacing.sm,
-    paddingRight: spacing.lg,
   },
   quickReplyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
     backgroundColor: colors.surface,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md + 2,
+    paddingVertical: spacing.sm + 4,
     borderRadius: borderRadius.full,
     borderWidth: 1,
     borderColor: colors.primary,
+    marginRight: spacing.sm,
   },
   quickReplyText: {
     fontSize: 13,
     color: colors.primary,
-    fontWeight: '500',
+    fontWeight: '600',
+  },
+  inputWrapper: {
+    backgroundColor: colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    paddingTop: spacing.md,
+    paddingBottom: Platform.OS === 'ios' ? 0 : spacing.md,
+    paddingHorizontal: spacing.md,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    padding: spacing.md,
-    backgroundColor: colors.surface,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
+    gap: spacing.sm,
   },
-  attachButton: {
-    width: 40,
-    height: 40,
+  iconButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.primaryLight,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  input: {
+  iconButtonDisabled: {
+    opacity: 0.4,
+    backgroundColor: colors.border,
+  },
+  inputBox: {
     flex: 1,
     backgroundColor: colors.background,
     borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
+  },
+  input: {
     fontSize: 15,
     color: colors.text,
     maxHeight: 100,
-    marginHorizontal: spacing.xs,
+    minHeight: 40,
   },
   sendButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',

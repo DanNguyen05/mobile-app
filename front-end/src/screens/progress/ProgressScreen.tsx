@@ -37,8 +37,11 @@ export default function ProgressScreen() {
       
       setMeasurements([]); // Empty for now
       setWeeklyStats(statsRes);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching progress data:', error);
+      // Set empty data on error instead of showing error to user
+      setWeeklyStats([]);
+      setMeasurements([]);
     }
   }, []);
 
@@ -86,10 +89,10 @@ export default function ProgressScreen() {
     : 0;
 
   const getBMICategory = (bmi: number) => {
-    if (bmi < 18.5) return { label: 'Underweight', color: '#60A5FA' };
-    if (bmi < 25) return { label: 'Normal', color: '#10B981' };
-    if (bmi < 30) return { label: 'Overweight', color: '#FBBF24' };
-    return { label: 'Obese', color: '#EF4444' };
+    if (bmi < 18.5) return { label: 'Thiếu cân', color: '#60A5FA' };
+    if (bmi < 25) return { label: 'Bình thường', color: '#10B981' };
+    if (bmi < 30) return { label: 'Thừa cân', color: '#FBBF24' };
+    return { label: 'Béo phì', color: '#EF4444' };
   };
 
   const bmiCategory = getBMICategory(bmi);
@@ -98,7 +101,7 @@ export default function ProgressScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Loading...</Text>
+          <Text style={styles.loadingText}>Đang tải...</Text>
         </View>
       </SafeAreaView>
     );
@@ -107,7 +110,7 @@ export default function ProgressScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Progress</Text>
+        <Text style={styles.title}>Tiến trình</Text>
       </View>
 
       <ScrollView
@@ -117,7 +120,7 @@ export default function ProgressScreen() {
         {/* BMI Card */}
         <View style={styles.bmiCard}>
           <View style={styles.bmiHeader}>
-            <Text style={styles.bmiTitle}>Body Mass Index</Text>
+            <Text style={styles.bmiTitle}>Chỉ số khối cơ thể (BMI)</Text>
             <View style={[styles.bmiBadge, { backgroundColor: bmiCategory.color + '20' }]}>
               <Text style={[styles.bmiBadgeText, { color: bmiCategory.color }]}>
                 {bmiCategory.label}
@@ -127,8 +130,8 @@ export default function ProgressScreen() {
           <View style={styles.bmiContent}>
             <Text style={styles.bmiValue}>{bmi || '--'}</Text>
             <View style={styles.bmiDetails}>
-              <Text style={styles.bmiDetailText}>Height: {user?.height_cm || '--'} cm</Text>
-              <Text style={styles.bmiDetailText}>Weight: {user?.weight_kg || '--'} kg</Text>
+              <Text style={styles.bmiDetailText}>Chiều cao: {user?.height_cm || '--'} cm</Text>
+              <Text style={styles.bmiDetailText}>Cân nặng: {user?.weight_kg || '--'} kg</Text>
             </View>
           </View>
           <View style={styles.bmiScale}>
@@ -138,10 +141,10 @@ export default function ProgressScreen() {
             <View style={[styles.bmiScaleItem, { backgroundColor: '#EF4444' }]} />
           </View>
           <View style={styles.bmiLabels}>
-            <Text style={styles.bmiLabel}>Under</Text>
-            <Text style={styles.bmiLabel}>Normal</Text>
-            <Text style={styles.bmiLabel}>Over</Text>
-            <Text style={styles.bmiLabel}>Obese</Text>
+            <Text style={styles.bmiLabel}>Thiếu</Text>
+            <Text style={styles.bmiLabel}>Bình thường</Text>
+            <Text style={styles.bmiLabel}>Thừa</Text>
+            <Text style={styles.bmiLabel}>Béo</Text>
           </View>
         </View>
 
@@ -152,7 +155,7 @@ export default function ProgressScreen() {
             onPress={() => setActiveTab('weight')}
           >
             <Text style={[styles.tabText, activeTab === 'weight' && styles.tabTextActive]}>
-              Weight Trend
+              Biển đổi cân nặng
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -160,7 +163,7 @@ export default function ProgressScreen() {
             onPress={() => setActiveTab('calories')}
           >
             <Text style={[styles.tabText, activeTab === 'calories' && styles.tabTextActive]}>
-              Calories Intake
+              Calories nạp vào
             </Text>
           </TouchableOpacity>
         </View>
@@ -182,8 +185,8 @@ export default function ProgressScreen() {
               />
             ) : (
               <View style={styles.noData}>
-                <Text style={styles.noDataText}>No weight data yet</Text>
-                <Text style={styles.noDataSubtext}>Log your measurements to see trends</Text>
+                <Text style={styles.noDataText}>Chưa có dữ liệu cân nặng</Text>
+                <Text style={styles.noDataSubtext}>Ghi nhận đo lường để xem xu hướng</Text>
               </View>
             )
           ) : caloriesData.length > 0 ? (
@@ -203,18 +206,18 @@ export default function ProgressScreen() {
             />
           ) : (
             <View style={styles.noData}>
-              <Text style={styles.noDataText}>No calories data yet</Text>
-              <Text style={styles.noDataSubtext}>Log your meals to see trends</Text>
+              <Text style={styles.noDataText}>Chưa có dữ liệu calories</Text>
+              <Text style={styles.noDataSubtext}>Ghi nhận bữa ăn để xem xu hướng</Text>
             </View>
           )}
         </View>
 
         {/* Stats Summary */}
         <View style={styles.statsSection}>
-          <Text style={styles.sectionTitle}>This Week's Summary</Text>
+          <Text style={styles.sectionTitle}>Tổng kết tuần này</Text>
           <View style={styles.statsGrid}>
             <View style={styles.statCard}>
-              <Text style={styles.statLabel}>Avg. Calories</Text>
+              <Text style={styles.statLabel}>Calo TB</Text>
               <Text style={styles.statValue}>
                 {weeklyStats.length > 0
                   ? Math.round(
@@ -224,7 +227,7 @@ export default function ProgressScreen() {
               </Text>
             </View>
             <View style={styles.statCard}>
-              <Text style={styles.statLabel}>Avg. Protein</Text>
+              <Text style={styles.statLabel}>Protein TB</Text>
               <Text style={styles.statValue}>
                 {weeklyStats.length > 0
                   ? Math.round(
@@ -234,13 +237,13 @@ export default function ProgressScreen() {
               </Text>
             </View>
             <View style={styles.statCard}>
-              <Text style={styles.statLabel}>Total Workouts</Text>
+              <Text style={styles.statLabel}>Tổng bài tập</Text>
               <Text style={styles.statValue}>
                 {weeklyStats.reduce((sum, s) => sum + (s.workouts_count || 0), 0)}
               </Text>
             </View>
             <View style={styles.statCard}>
-              <Text style={styles.statLabel}>Calories Burned</Text>
+              <Text style={styles.statLabel}>Calo đốt</Text>
               <Text style={styles.statValue}>
                 {weeklyStats.reduce((sum, s) => sum + (s.calories_burned || 0), 0)}
               </Text>
@@ -277,7 +280,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: spacing.md,
-    paddingBottom: 32,
+    paddingBottom: 100,
   },
   bmiCard: {
     backgroundColor: colors.surface,

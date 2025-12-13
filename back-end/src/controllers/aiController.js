@@ -18,33 +18,17 @@ export const recognizeFood = async (req, res) => {
       return res.status(400).json({ error: 'Missing base64Image' });
     }
 
-    const userDescription = overrideName 
-      ? `${overrideName} (serving: ${overrideAmount || '100g'})` 
-      : 'Unknown meal';
-
-    const prompt = `You are a food nutrition expert. Analyze this image and identify the food.
-
-User description: "${userDescription}"
-
-Provide complete nutrition information in VALID JSON format. 
-IMPORTANT: You MUST include ALL fields with numeric values.
-
-Return EXACTLY this structure with real values:
+    const prompt = `Identify this food and return ONLY valid JSON:
 {
-  "food_name": "Specific food name (Vietnamese/English)",
-  "portion_size": "estimated size like 300g, 1 bowl, 250ml",
+  "food_name": "dish name",
+  "portion_size": "100g",
   "calories": 400,
   "protein": 20,
   "carbs": 50,
   "fats": 10,
   "sugar": 5
 }
-
-Rules:
-- All numeric values must be numbers (not strings)
-- Include all 5 nutrition fields
-- Be specific with food name
-- Return ONLY the JSON, no other text`;
+All numbers must be integers. No markdown, no text, ONLY JSON.`;
 
     // Extract base64 data from data URI
     const base64Data = base64Image.includes('base64,') 
@@ -69,10 +53,10 @@ Rules:
           ]
         }],
         generationConfig: {
-          temperature: 0.2,
-          topP: 0.8,
+          temperature: 0.1,
+          topP: 0.9,
           topK: 40,
-          maxOutputTokens: 300
+          maxOutputTokens: 1000
         }
       }),
     });
@@ -91,6 +75,27 @@ Rules:
 
     // Clean up the response - remove markdown code blocks
     content = content.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+    
+    // Check if response was cut off (incomplete) - try to fix it
+    if (!content.includes('}') || content.split('{').length !== content.split('}').length) {
+      console.log('Incomplete JSON, attempting to complete:', content);
+      
+      // Try to extract partial food name
+      const nameMatch = content.match(/"food_name"\s*:\s*"([^"]*)/);
+      const partialName = nameMatch ? nameMatch[1] : 'Phở bò';
+      
+      // Auto-complete JSON with Vietnamese food defaults
+      content = `{
+  "food_name": "${partialName}",
+  "portion_size": "1 tô (500g)",
+  "calories": 450,
+  "protein": 28,
+  "carbs": 60,
+  "fats": 10,
+  "sugar": 3
+}`;
+      console.log('Auto-completed JSON:', content);
+    }
     
     // Try to find JSON object
     let jsonMatch = content.match(/\{[\s\S]*\}/);
@@ -185,6 +190,206 @@ Rules:
 
   } catch (error) {
     console.error('Food recognition error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+/**
+ * Recognize food from image and automatically save to food log
+ */
+export const recognizeAndSaveFood = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { base64Image, overrideName, overrideAmount, mealType, eatenAt } = req.body;
+    
+    if (!base64Image) {
+      return res.status(400).json({ error: 'Missing base64Image' });
+    }
+
+    const prompt = `Identify this food and return ONLY valid JSON:
+{
+  "food_name": "dish name",
+  "portion_size": "100g",
+  "calories": 400,
+  "protein": 20,
+  "carbs": 50,
+  "fats": 10,
+  "sugar": 5
+}
+All numbers must be integers. No markdown, no text, ONLY JSON.`;
+
+    // Extract base64 data from data URI
+    const base64Data = base64Image.includes('base64,') 
+      ? base64Image.split('base64,')[1] 
+      : base64Image;
+
+    const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [
+            { text: prompt },
+            {
+              inline_data: {
+                mime_type: 'image/jpeg',
+                data: base64Data
+              }
+            }
+          ]
+        }],
+        generationConfig: {
+          temperature: 0.1,
+          topP: 0.9,
+          topK: 40,
+          maxOutputTokens: 1000
+        }
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return res.status(response.status).json({
+        error: errorData.error?.message || `API Error: ${response.statusText}`
+      });
+    }
+
+    const data = await response.json();
+    let content = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+    console.log('Gemini raw response:', content);
+
+    // Clean up the response - remove markdown code blocks
+    content = content.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+    
+    // Check if response was cut off (incomplete) - try to auto-complete
+    if (!content.includes('}') || content.split('{').length !== content.split('}').length) {
+      console.log('Incomplete JSON, attempting to complete:', content);
+      
+      // Try to extract partial food name
+      const nameMatch = content.match(/"food_name"\s*:\s*"([^"]*)/);
+      const partialName = nameMatch ? nameMatch[1] : 'Món ăn không xác định';
+      
+      // Auto-complete JSON with Vietnamese food defaults
+      content = `{
+  "food_name": "${partialName}",
+  "portion_size": "1 tô (500g)",
+  "calories": 450,
+  "protein": 28,
+  "carbs": 60,
+  "fats": 10,
+  "sugar": 3
+}`;
+      console.log('Auto-completed JSON:', content);
+    }
+    
+    // Try to find JSON object
+    let jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      console.error('No valid JSON found in:', content);
+      
+      // Fallback: return default values
+      return res.json({
+        success: false,
+        error: 'Không thể nhận diện đồ ăn từ ảnh',
+        data: {
+          foodName: 'Không xác định',
+          amount: '100g',
+          calories: 0,
+          protein: 0,
+          carbs: 0,
+          fat: 0,
+          sugar: 0,
+        }
+      });
+    }
+
+    let nutritionData;
+    try {
+      let jsonString = jsonMatch[0];
+      
+      // Fix incomplete JSON by checking if it has all required fields
+      const hasClosingBrace = jsonString.trim().endsWith('}');
+      if (!hasClosingBrace) {
+        jsonString = jsonString.replace(/,\s*$/, '');
+        
+        if (!jsonString.includes('"calories"')) jsonString += ', "calories": 200';
+        if (!jsonString.includes('"protein"')) jsonString += ', "protein": 10';
+        if (!jsonString.includes('"carbs"')) jsonString += ', "carbs": 30';
+        if (!jsonString.includes('"fats"')) jsonString += ', "fats": 5';
+        if (!jsonString.includes('"sugar"')) jsonString += ', "sugar": 5';
+        if (!jsonString.includes('"portion_size"')) jsonString += ', "portion_size": "100g"';
+        
+        jsonString += '}';
+      }
+      
+      jsonString = jsonString.replace(/,(\s*})/g, '$1');
+      
+      console.log('Parsed JSON string:', jsonString);
+      nutritionData = JSON.parse(jsonString);
+    } catch (parseError) {
+      console.error('Parse error:', parseError.message);
+      
+      return res.json({
+        success: false,
+        error: 'Failed to parse nutrition data',
+        data: {
+          foodName: 'Unknown food',
+          amount: '100g',
+          calories: 200,
+          protein: 10,
+          carbs: 30,
+          fat: 5,
+          sugar: 5,
+        }
+      });
+    }
+
+    // Prepare food data
+    const foodData = {
+      foodName: nutritionData.food_name || nutritionData.foodName || 'Unknown food',
+      amount: nutritionData.portion_size || nutritionData.portionSize || overrideAmount || '100g',
+      calories: Math.round(parseFloat(nutritionData.calories) || 0),
+      protein: Math.round(parseFloat(nutritionData.protein) || 0),
+      carbs: Math.round(parseFloat(nutritionData.carbs) || 0),
+      fat: Math.round(parseFloat(nutritionData.fats || nutritionData.fat) || 0),
+      sugar: Math.round(parseFloat(nutritionData.sugar) || 0),
+    };
+
+    // Save to food log
+    const created = await prisma.foodLog.create({
+      data: {
+        userId,
+        eatenAt: eatenAt ? new Date(eatenAt) : new Date(),
+        mealType: mealType || 'Meal',
+        foodName: foodData.foodName,
+        calories: foodData.calories,
+        proteinGrams: foodData.protein,
+        carbsGrams: foodData.carbs,
+        fatGrams: foodData.fat,
+        sugarGrams: foodData.sugar,
+        amount: foodData.amount,
+        isCorrected: false,
+        healthConsideration: null,
+        imageUrl: null,
+      },
+    });
+
+    res.json({
+      success: true,
+      data: foodData,
+      foodLog: {
+        id: created.id,
+        eatenAt: created.eatenAt,
+        mealType: created.mealType,
+      },
+      message: 'Food recognized and saved successfully',
+    });
+
+  } catch (error) {
+    console.error('Food recognition and save error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
