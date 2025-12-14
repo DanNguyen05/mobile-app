@@ -11,9 +11,11 @@ import {
   Alert,
   Modal,
   ActivityIndicator,
+  Platform,
+  StatusBar,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect } from '@react-navigation/native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { format } from 'date-fns';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -34,6 +36,8 @@ const EXERCISE_TYPES = [
 ];
 
 export default function ExercisesScreen() {
+  const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const [workouts, setWorkouts] = useState<WorkoutLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -149,28 +153,35 @@ export default function ExercisesScreen() {
   if (loading) {
     return (
       <ScreenBackground>
-        <SafeAreaView style={{ flex: 1 }}>
+        <View style={{ flex: 1 }}>
+          <StatusBar barStyle="light-content" backgroundColor="#10b981" />
+          <View style={[styles.customHeader, { paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight || 0 : insets.top }]}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+              <Ionicons name="arrow-back" size={24} color="#fff" />
+            </TouchableOpacity>
+            <Text style={styles.customHeaderTitle}>Bài tập</Text>
+            <View style={{ width: 40 }} />
+          </View>
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
             <ActivityIndicator size="large" color={colors.primary} />
           </View>
-        </SafeAreaView>
+        </View>
       </ScreenBackground>
     );
   }
 
   return (
     <ScreenBackground>
-      <SafeAreaView style={styles.container}>
-        {/* Header with gradient */}
-        <LinearGradient
-          colors={['#FF6B6B', '#EE5A52']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.headerGradient}
-        >
-          <Text style={styles.title}>💪 Bài tập</Text>
-          <Text style={styles.date}>{format(new Date(), 'EEEE, MMM d')}</Text>
-        </LinearGradient>
+      <View style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="#10b981" />
+        {/* Custom Header */}
+        <View style={[styles.customHeader, { paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight || 0 : insets.top }]}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <Text style={styles.customHeaderTitle}>Bài tập</Text>
+          <View style={{ width: 40 }} />
+        </View>
 
         {/* Summary Cards */}
         <View style={styles.summaryRow}>
@@ -339,7 +350,7 @@ export default function ExercisesScreen() {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+      </View>
     </ScreenBackground>
   );
 }
@@ -348,6 +359,27 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: 'transparent',
+  },
+  customHeader: {
+    backgroundColor: '#10b981',
+    paddingBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+  },
+  customHeaderTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#fff',
+    flex: 1,
+    textAlign: 'center',
   },
   loadingContainer: {
     flex: 1,

@@ -246,4 +246,55 @@ export const api = {
   // Chat / AI Messages
   sendMessage: (message: string): Promise<any> =>
     http.request('/api/chat', { method: 'POST', json: { message } }),
+
+  // AI Food Recognition - Use Gemini AI
+  analyzeFoodImage: async (imageUri: string): Promise<{
+    food_name: string;
+    calories: number;
+    protein_g: number;
+    carbs_g: number;
+    fat_g: number;
+    confidence: number;
+  }> => {
+    try {
+      // Convert image URI to base64
+      const base64Image = await fetch(imageUri)
+        .then(res => res.blob())
+        .then(blob => new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        }));
+
+      // Call the AI recognition API
+      const result = await http.request<{ success: boolean; data: {
+        foodName: string;
+        calories: number;
+        protein: number;
+        carbs: number;
+        fats: number;
+        portionSize: string;
+        confidence: number;
+      } }>(
+        '/api/ai/recognize-food',
+        {
+          method: 'POST',
+          json: { base64Image },
+        }
+      );
+
+      return {
+        food_name: result.data.foodName,
+        calories: Math.round(result.data.calories),
+        protein_g: Math.round(result.data.protein),
+        carbs_g: Math.round(result.data.carbs),
+        fat_g: Math.round(result.data.fats),
+        confidence: result.data.confidence,
+      };
+    } catch (error: any) {
+      console.error('❌ Error analyzing food image:', error);
+      throw new Error(error.message || 'Không thể phân tích ảnh');
+    }
+  },
 };

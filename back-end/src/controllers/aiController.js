@@ -373,7 +373,7 @@ All numbers must be integers. No markdown, no text, ONLY JSON.`;
         amount: foodData.amount,
         isCorrected: false,
         healthConsideration: null,
-        imageUrl: null,
+        imageUrl: `data:image/jpeg;base64,${base64Data}`,
       },
     });
 

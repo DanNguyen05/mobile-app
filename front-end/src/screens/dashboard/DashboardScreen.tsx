@@ -14,7 +14,8 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { format } from 'date-fns';
 
@@ -115,8 +116,17 @@ interface MealItem {
   imageUrl?: string;
 }
 
+type RootStackParamList = {
+  FoodLog: undefined;
+  WorkoutLog: undefined;
+  HealthInsights: undefined;
+};
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
 export default function DashboardScreen() {
   const { user } = useAuth();
+  const navigation = useNavigation<NavigationProp>();
   const [todayStats, setTodayStats] = useState<DailyStatistics | null>(null);
   const [todayMeals, setTodayMeals] = useState<MealItem[]>([]);
   const [recentWorkouts, setRecentWorkouts] = useState<WorkoutLog[]>([]);
@@ -392,11 +402,11 @@ export default function DashboardScreen() {
           </View>
         </View>
 
-        {/* Stats Grid */}
+        {/* Stats Grid - 1 Row */}
         <View style={styles.statsGrid}>
           <View style={styles.statCard}>
             <View style={[styles.statIcon, { backgroundColor: colors.primaryLight }]}>
-              <Ionicons name="body-outline" size={24} color={colors.primary} />
+              <Ionicons name="body-outline" size={20} color={colors.primary} />
             </View>
             <Text style={styles.statValue}>{user?.weight_kg || '--'} kg</Text>
             <Text style={styles.statLabel}>Cân nặng</Text>
@@ -404,7 +414,7 @@ export default function DashboardScreen() {
 
           <View style={styles.statCard}>
             <View style={[styles.statIcon, { backgroundColor: '#E8F5E9' }]}>
-              <Ionicons name="analytics-outline" size={24} color="#4CAF50" />
+              <Ionicons name="analytics-outline" size={20} color="#4CAF50" />
             </View>
             <Text style={styles.statValue}>{bmi || '--'}</Text>
             <Text style={styles.statLabel}>BMI</Text>
@@ -412,7 +422,7 @@ export default function DashboardScreen() {
 
           <View style={styles.statCard}>
             <View style={[styles.statIcon, { backgroundColor: '#F3E8FF' }]}>
-              <Ionicons name="fast-food-outline" size={24} color={colors.protein} />
+              <Ionicons name="fast-food-outline" size={20} color={colors.protein} />
             </View>
             <Text style={styles.statValue}>{Math.round(totalNutrition.protein)}g</Text>
             <Text style={styles.statLabel}>Protein</Text>
@@ -420,49 +430,11 @@ export default function DashboardScreen() {
 
           <View style={styles.statCard}>
             <View style={[styles.statIcon, { backgroundColor: '#FFF4E6' }]}>
-              <Ionicons name="nutrition-outline" size={24} color={colors.carbs} />
+              <Ionicons name="nutrition-outline" size={20} color={colors.carbs} />
             </View>
             <Text style={styles.statValue}>{Math.round(totalNutrition.carbs)}g</Text>
             <Text style={styles.statLabel}>Carbs</Text>
           </View>
-        </View>
-
-        {/* Streak & Achievements */}
-        <View style={styles.streakCard}>
-          <LinearGradient
-            colors={['#FFF7ED', '#FFEDD5']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.streakGradient}
-          >
-            <View style={styles.streakHeader}>
-              <Text style={styles.streakEmoji}>🔥</Text>
-              <View style={styles.streakInfo}>
-                <Text style={styles.streakNumber}>{currentStreak} ngày</Text>
-                <Text style={styles.streakText}>liên tiếp đạt mục tiêu!</Text>
-              </View>
-            </View>
-            
-            {/* Achievement Badges */}
-            <View style={styles.badgesContainer}>
-              <View style={styles.badge}>
-                <Text style={styles.badgeIcon}>🥉</Text>
-                <Text style={styles.badgeLabel}>7 ngày</Text>
-              </View>
-              <View style={[styles.badge, styles.badgeLocked]}>
-                <Text style={styles.badgeIcon}>🥈</Text>
-                <Text style={styles.badgeLabelLocked}>30 ngày</Text>
-              </View>
-              <View style={[styles.badge, styles.badgeLocked]}>
-                <Text style={styles.badgeIcon}>🥇</Text>
-                <Text style={styles.badgeLabelLocked}>100 ngày</Text>
-              </View>
-              <View style={[styles.badge, styles.badgeLocked]}>
-                <Text style={styles.badgeIcon}>💎</Text>
-                <Text style={styles.badgeLabelLocked}>365 ngày</Text>
-              </View>
-            </View>
-          </LinearGradient>
         </View>
 
         {/* Nutrition Chart */}
@@ -483,7 +455,7 @@ export default function DashboardScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Bài tập gần đây</Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate('WorkoutLog')}>
               <Text style={styles.seeAllText}>Xem tất cả</Text>
             </TouchableOpacity>
           </View>
@@ -515,7 +487,7 @@ export default function DashboardScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Bữa ăn hôm nay</Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate('FoodLog')}>
               <Text style={styles.seeAllText}>Xem tất cả</Text>
             </TouchableOpacity>
           </View>
@@ -547,7 +519,7 @@ export default function DashboardScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>📚 Kiến thức sức khỏe</Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate('HealthInsights')}>
               <Text style={styles.seeAllText}>Xem tất cả</Text>
             </TouchableOpacity>
           </View>
@@ -822,18 +794,18 @@ const styles = StyleSheet.create({
     height: 40,
     backgroundColor: colors.border,
   },
-  // Stats Grid
+  // Stats Grid - 1 Row with 4 Columns
   statsGrid: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
+    justifyContent: 'space-between',
     marginBottom: spacing.lg,
+    gap: spacing.xs,
   },
   statCard: {
+    flex: 1,
     backgroundColor: 'rgba(255, 255, 255, 0.85)',
-    borderRadius: borderRadius.lg,
-    padding: spacing.md,
-    width: (width - spacing.md * 3) / 2,
+    borderRadius: borderRadius.md,
+    padding: spacing.sm,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: 'rgba(16, 185, 129, 0.12)',
@@ -844,22 +816,23 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   statIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
   },
   statValue: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: '700',
     color: colors.text,
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: 10,
     color: colors.textSecondary,
-    marginTop: 4,
+    marginTop: 2,
+    textAlign: 'center',
   },
   // Streak & Achievements
   streakCard: {

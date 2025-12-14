@@ -1,5 +1,6 @@
 // src/navigation/AppNavigator.tsx
 import React from 'react';
+import { View } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,6 +19,8 @@ import DashboardScreen from '../screens/dashboard/DashboardScreen';
 import FoodDiaryScreen from '../screens/foodDiary/FoodDiaryScreen';
 import ExercisesScreen from '../screens/exercises/ExercisesScreen';
 import MessagesScreen from '../screens/messages/MessagesScreen';
+import FoodRecognitionScreen from '../screens/foodRecognition/FoodRecognitionScreen';
+import SettingsScreen from '../screens/settings/SettingsScreen';
 
 // Stack Navigators
 import { UtilitiesStackNavigator } from './UtilitiesStackNavigator';
@@ -36,10 +39,10 @@ export type AuthStackParamList = {
 
 export type MainTabParamList = {
   Dashboard: undefined;
-  FoodDiary: undefined;
-  Messages: undefined;
-  Exercises: undefined;
+  FoodLog: undefined;
+  Camera: undefined;
   Utilities: undefined;
+  Settings: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -86,14 +89,40 @@ const MainTabNavigator = () => {
 
           if (route.name === 'Dashboard') {
             iconName = focused ? 'home' : 'home-outline';
-          } else if (route.name === 'FoodDiary') {
+          } else if (route.name === 'FoodLog') {
             iconName = focused ? 'restaurant' : 'restaurant-outline';
-          } else if (route.name === 'Messages') {
-            iconName = focused ? 'chatbubbles' : 'chatbubbles-outline';
-          } else if (route.name === 'Exercises') {
-            iconName = focused ? 'fitness' : 'fitness-outline';
+          } else if (route.name === 'Camera') {
+            iconName = 'camera';
           } else if (route.name === 'Utilities') {
             iconName = focused ? 'grid' : 'grid-outline';
+          } else if (route.name === 'Settings') {
+            iconName = focused ? 'settings' : 'settings-outline';
+          }
+
+          // Camera button style
+          if (route.name === 'Camera') {
+            return (
+              <View
+                style={{
+                  backgroundColor: colors.primary,
+                  width: 64,
+                  height: 64,
+                  borderRadius: 32,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  marginTop: -30,
+                  borderWidth: 4,
+                  borderColor: '#fff',
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.25,
+                  shadowRadius: 6,
+                  elevation: 10,
+                }}
+              >
+                <Ionicons name={iconName} size={30} color="#fff" />
+              </View>
+            );
           }
 
           return <Ionicons name={iconName} size={size} color={color} />;
@@ -101,10 +130,17 @@ const MainTabNavigator = () => {
       })}
     >
       <Tab.Screen name="Dashboard" component={DashboardScreen} options={{ title: 'Trang chủ' }} />
-      <Tab.Screen name="FoodDiary" component={FoodDiaryScreen} options={{ title: 'Ăn uống' }} />
-      <Tab.Screen name="Messages" component={MessagesScreen} options={{ title: 'AI Chat' }} />
-      <Tab.Screen name="Exercises" component={ExercisesScreen} options={{ title: 'Tập luyện' }} />
+      <Tab.Screen name="FoodLog" component={FoodDiaryScreen} options={{ title: 'Nhật ký' }} />
+      <Tab.Screen 
+        name="Camera" 
+        component={FoodRecognitionScreen} 
+        options={{ 
+          title: 'Chụp ảnh',
+          tabBarLabel: () => null,
+        }} 
+      />
       <Tab.Screen name="Utilities" component={UtilitiesStackNavigator} options={{ title: 'Tiện ích' }} />
+      <Tab.Screen name="Settings" component={SettingsScreen} options={{ title: 'Cài đặt' }} />
     </Tab.Navigator>
   );
 };

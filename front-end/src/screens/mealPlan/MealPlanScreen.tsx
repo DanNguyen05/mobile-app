@@ -10,9 +10,12 @@ import {
   TextInput,
   ActivityIndicator,
   Alert,
+  StatusBar,
+  Platform,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { format, addDays, startOfWeek } from 'date-fns';
 import { vi } from 'date-fns/locale';
 
@@ -99,6 +102,8 @@ const HEALTHY_PLAN: DayPlan[] = [
 ];
 
 export default function MealPlanScreen() {
+  const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const [plan, setPlan] = useState<DayPlan[]>(HEALTHY_PLAN);
   const [selectedDay, setSelectedDay] = useState(0);
   const [showForm, setShowForm] = useState(false);
@@ -207,16 +212,20 @@ export default function MealPlanScreen() {
     : 0;
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.title}>Kế hoạch 7 ngày</Text>
-          <Text style={styles.subtitle}>Bữa ăn lành mạnh cho tuần này</Text>
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#10b981" />
+      
+      {/* Custom Header */}
+      <View style={[styles.customHeader, { paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight || 0 : insets.top }]}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="#fff" />
+        </TouchableOpacity>
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTitle}>Kế hoạch 7 ngày</Text>
+          <Text style={styles.headerSubtitle}>Bữa ăn lành mạnh</Text>
         </View>
-        <TouchableOpacity style={styles.generateButton} onPress={() => setShowForm(true)}>
+        <TouchableOpacity style={styles.headerGenerateButton} onPress={() => setShowForm(true)}>
           <Ionicons name="sparkles" size={20} color="#fff" />
-          <Text style={styles.generateButtonText}>Tạo mới</Text>
         </TouchableOpacity>
       </View>
 
@@ -329,14 +338,56 @@ export default function MealPlanScreen() {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#F5F7FA',
+  },
+  customHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    backgroundColor: '#10b981',
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.8)',
+    marginTop: 2,
+  },
+  headerGenerateButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  generateButton: {
+    backgroundColor: '#10b981',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
   },
   header: {
     flexDirection: 'row',
@@ -354,15 +405,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textSecondary,
     marginTop: 4,
-  },
-  generateButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: colors.primary,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.md,
   },
   generateButtonText: {
     fontSize: 14,

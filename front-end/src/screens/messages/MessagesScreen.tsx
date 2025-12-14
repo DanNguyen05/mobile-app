@@ -13,10 +13,12 @@ import {
   Image,
   Alert,
   Animated,
+  StatusBar,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { useNavigation } from '@react-navigation/native';
 
 import { api } from '../../services/api';
 import { chatWithAI, analyzeFood, analyzeAndSaveFood, generateExercisePlan, type AIExercisePlan, type UserProfileContext } from '../../services/aiService';
@@ -106,6 +108,8 @@ const TypingIndicator = () => {
 
 export default function MessagesScreen() {
   const { user } = useAuth();
+  const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -401,12 +405,16 @@ export default function MessagesScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Simple Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Trợ lý AI</Text>
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#10b981" />
+      {/* Custom Header with Back Button */}
+      <View style={[styles.customHeader, { paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight || 0 : insets.top }]}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="#fff" />
+        </TouchableOpacity>
+        <Text style={styles.customHeaderTitle}>Trợ lý AI</Text>
         <TouchableOpacity onPress={clearChat} style={styles.clearButton} activeOpacity={0.7}>
-          <Ionicons name="refresh-outline" size={22} color={colors.textSecondary} />
+          <Ionicons name="refresh-outline" size={22} color="#fff" />
         </TouchableOpacity>
       </View>
 
@@ -630,14 +638,36 @@ export default function MessagesScreen() {
           </View>
         </View>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#F5F7FA',
+  },
+  customHeader: {
+    backgroundColor: '#10b981',
+    paddingBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+  },
+  customHeaderTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#fff',
+    flex: 1,
+    textAlign: 'center',
+    marginRight: -40,
   },
   header: {
     flexDirection: 'row',

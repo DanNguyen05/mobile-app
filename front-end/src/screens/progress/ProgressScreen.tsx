@@ -8,10 +8,14 @@ import {
   RefreshControl,
   TouchableOpacity,
   Dimensions,
+  Platform,
+  StatusBar,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { format, subDays } from 'date-fns';
 import { LineChart } from 'react-native-chart-kit';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 
 import { useAuth } from '../../context/AuthContext';
 import { api, type BodyMeasurement, type DailyStatistics } from '../../services/api';
@@ -21,6 +25,8 @@ const { width } = Dimensions.get('window');
 
 export default function ProgressScreen() {
   const { user } = useAuth();
+  const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const [measurements, setMeasurements] = useState<BodyMeasurement[]>([]);
   const [weeklyStats, setWeeklyStats] = useState<DailyStatistics[]>([]);
   const [loading, setLoading] = useState(true);
@@ -99,18 +105,31 @@ export default function ProgressScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <View style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="#10b981" />
+        <View style={[styles.customHeader, { paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight || 0 : insets.top }]}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Tiến trình</Text>
+          <View style={{ width: 40 }} />
+        </View>
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>Đang tải...</Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Tiến trình</Text>
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#10b981" />
+      <View style={[styles.customHeader, { paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight || 0 : insets.top }]}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="#fff" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Tiến trình</Text>
+        <View style={{ width: 40 }} />
       </View>
 
       <ScrollView
@@ -251,14 +270,35 @@ export default function ProgressScreen() {
           </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#F5F7FA',
+  },
+  customHeader: {
+    backgroundColor: '#10b981',
+    paddingBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#fff',
+    flex: 1,
+    textAlign: 'center',
   },
   loadingContainer: {
     flex: 1,
