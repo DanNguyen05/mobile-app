@@ -281,69 +281,56 @@ export default function DashboardScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Tổng quan</Text>
-      </View>
-      
-      {/* Colorful Background Gradient */}
+      {/* Fixed Header Background */}
       <LinearGradient
-        colors={['#E0F2F1', '#F1F8E9', '#FFF3E0']}
+        colors={['#10b981', '#059669', '#047857']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={styles.backgroundGradient}
+        style={styles.headerBackground}
       />
       
-      {/* Decorative Circles */}
-      <View style={styles.decorativeCircle1} />
-      <View style={styles.decorativeCircle2} />
-      <View style={styles.decorativeCircle3} />
+      {/* Decorative Elements */}
+      <View style={styles.decorPattern1} />
+      <View style={styles.decorPattern2} />
       
-      <SafeAreaView style={styles.safeArea}>
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-      >
-        {/* Enhanced Header */}
-        <View style={styles.headerCard}>
-          <LinearGradient
-            colors={['#10b981', '#059669']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.headerGradient}
-          >
-            <View style={styles.headerContent}>
-              <View style={styles.headerLeft}>
-                <View style={styles.avatarContainer}>
-                  <Text style={styles.avatarText}>
-                    {(user?.name || 'B').charAt(0).toUpperCase()}
-                  </Text>
-                </View>
-                <View style={styles.greetingContainer}>
-                  <Text style={styles.greetingTime}>
-                    {getTimeBasedGreeting().emoji} {getTimeBasedGreeting().text}
-                  </Text>
-                  <Text style={styles.greetingName}>{user?.name || 'Bạn'}!</Text>
-                  <Text style={styles.greetingDate}>
-                    {format(new Date(), 'EEEE, d MMMM yyyy')}
-                  </Text>
-                </View>
+      {/* Fixed Header */}
+      <SafeAreaView style={styles.fixedHeaderContainer} edges={['top']}>
+        <View style={styles.professionalHeader}>
+          <View style={styles.headerTop}>
+            <View style={styles.userSection}>
+              <View style={styles.avatarCircle}>
+                <Ionicons name="person" size={28} color="#fff" />
               </View>
-              
-              {/* Quick Mini Stats */}
-              <View style={styles.quickStats}>
-                <View style={styles.quickStat}>
-                  <Ionicons name="flame" size={16} color="#fff" />
-                  <Text style={styles.quickStatValue}>{currentStreak}</Text>
-                </View>
-                <View style={styles.quickStat}>
-                  <Ionicons name="trophy" size={16} color="#FFD700" />
-                  <Text style={styles.quickStatValue}>1</Text>
-                </View>
+              <View style={styles.userTextBlock}>
+                <Text style={styles.greetingText}>
+                  {getTimeBasedGreeting().emoji} {getTimeBasedGreeting().text}
+                </Text>
+                <Text style={styles.userNameText}>{user?.name || 'Người dùng'}</Text>
+                <Text style={styles.userGoalText}>
+                  Mục tiêu: {user?.goal === 'lose_weight' ? 'Giảm cân' : user?.goal === 'gain_muscle' ? 'Tăng cơ' : 'Duy trì sức khỏe'}
+                </Text>
               </View>
             </View>
-          </LinearGradient>
+            
+            <View style={styles.headerIcons}>
+              <TouchableOpacity style={styles.headerIconBtn} onPress={goToCalendar}>
+                <Ionicons name="calendar-outline" size={24} color="#fff" />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.headerIconBtn}>
+                <Ionicons name="notifications-outline" size={24} color="#fff" />
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
+      </SafeAreaView>
+      
+      {/* Scrollable Content */}
+      <ScrollView
+        style={styles.scrollContainer}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      >
 
         {/* Summary Card với Progress Bar */}
         <View style={styles.summaryCard}>
@@ -616,7 +603,6 @@ export default function DashboardScreen() {
           ))}
         </View>
       </ScrollView>
-      </SafeAreaView>
     </View>
   );
 }
@@ -624,49 +610,113 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    position: 'relative',
+    backgroundColor: '#f8f9fa',
   },
-  backgroundGradient: {
+  headerBackground: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    bottom: 0,
+    height: 180,
   },
-  // Decorative Elements
-  decorativeCircle1: {
+  decorPattern1: {
     position: 'absolute',
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: 'rgba(16, 185, 129, 0.08)',
-    top: -50,
-    right: -50,
-  },
-  decorativeCircle2: {
-    position: 'absolute',
+    top: -30,
+    right: -30,
     width: 150,
     height: 150,
     borderRadius: 75,
-    backgroundColor: 'rgba(139, 92, 246, 0.06)',
-    top: 200,
-    left: -30,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
   },
-  decorativeCircle3: {
+  decorPattern2: {
     position: 'absolute',
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    backgroundColor: 'rgba(251, 146, 60, 0.06)',
-    bottom: 100,
-    right: -40,
+    top: 80,
+    left: -40,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
   },
-  safeArea: {
+  fixedHeaderContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+  },
+  professionalHeader: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.md,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: spacing.lg,
+  },
+  userSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
     flex: 1,
   },
+  avatarCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.md,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  userTextBlock: {
+    flex: 1,
+  },
+  greetingText: {
+    fontSize: 13,
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontWeight: '500',
+    marginBottom: 4,
+  },
+  userNameText: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#fff',
+    marginBottom: 2,
+    letterSpacing: -0.5,
+  },
+  userGoalText: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontWeight: '500',
+  },
+  headerIcons: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  headerIconBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  scrollContainer: {
+    flex: 1,
+    marginTop: 140,
+  },
   scrollContent: {
-    padding: spacing.md,
+    padding: spacing.lg,
+    paddingTop: spacing.md,
     paddingBottom: 140,
+    backgroundColor: '#f8f9fa',
+    borderTopLeftRadius: borderRadius.xl,
+    borderTopRightRadius: borderRadius.xl,
   },
   loadingContainer: {
     flex: 1,
@@ -676,82 +726,6 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 18,
     color: colors.textSecondary,
-  },
-  // Enhanced Header
-  headerCard: {
-    marginBottom: spacing.lg,
-    borderRadius: borderRadius.lg,
-    overflow: 'hidden',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-  },
-  headerGradient: {
-    padding: spacing.lg,
-  },
-  headerContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  avatarContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: spacing.md,
-    borderWidth: 3,
-    borderColor: 'rgba(255, 255, 255, 0.4)',
-  },
-  avatarText: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#fff',
-  },
-  greetingContainer: {
-    flex: 1,
-  },
-  greetingTime: {
-    fontSize: 13,
-    color: 'rgba(255, 255, 255, 0.9)',
-    fontWeight: '500',
-    marginBottom: 2,
-  },
-  greetingName: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#fff',
-    marginBottom: 2,
-  },
-  greetingDate: {
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.8)',
-  },
-  quickStats: {
-    gap: spacing.sm,
-  },
-  quickStat: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.sm,
-    gap: 4,
-  },
-  quickStatValue: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#fff',
   },
   // Summary Card
   summaryCard: {
