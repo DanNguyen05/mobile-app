@@ -57,10 +57,31 @@ class Http {
     this.axiosInstance.interceptors.response.use(
       (response) => response,
       async (error) => {
-        if (error.response?.status === 401) {
-          // Có thể thực hiện refresh token ở đây
-          await this.clearTokens();
+        const originalRequest = error.config;
+        
+        if (error.response?.status === 401 && !originalRequest._retry) {
+          originalRequest._retry = true;
+          
+          try {
+            // Thử lấy lại token mới từ SecureStore
+            const token = await this.getAccessToken();
+            
+            if (token) {
+              // Retry request với token hiện tại
+              originalRequest.headers.Authorization = `Bearer ${token}`;
+              return this.axiosInstance(originalRequest);
+            } else {
+              // Không có token, clear và reject
+              await this.clearTokens();
+              return Promise.reject(error);
+            }
+          } catch (retryError) {
+            // Nếu retry failed, clear tokens
+            await this.clearTokens();
+            return Promise.reject(error);
+          }
         }
+        
         return Promise.reject(error);
       }
     );

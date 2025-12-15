@@ -297,4 +297,11 @@ export const api = {
       throw new Error(error.message || 'Không thể phân tích ảnh');
     }
   },
+
+  // Generate 7-day meal plan
+  generateMealPlan: (data: { allergies?: string; preferences?: string }): Promise<any> =>
+    http.request('/api/ai/meal-plan', {
+      method: 'POST',
+      json: data,
+    }),
 };

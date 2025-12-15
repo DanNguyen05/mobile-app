@@ -18,6 +18,7 @@ import { format, addDays, startOfWeek } from 'date-fns';
 import { vi } from 'date-fns/locale';
 
 import { colors, spacing, borderRadius } from '../../context/ThemeContext';
+import { api } from '../../services/api';
 
 interface Meal {
   name: string;
@@ -153,55 +154,86 @@ export default function MealPlanScreen() {
     }
   };
 
-  const handleGeneratePlan = () => {
-    Alert.alert(
-      'Tạo kế hoạch mới',
-      'Tính năng AI đang phát triển. Bạn muốn sử dụng kế hoạch mẫu lành mạnh?',
-      [
-        { text: 'Hủy', style: 'cancel' },
-        {
-          text: 'Sử dụng mẫu',
-          onPress: () => {
-            setLoading(true);
-            setTimeout(() => {
+  const handleGeneratePlan = async () => {
+    try {
+      setLoading(true);
+      
+      const result = await api.generateMealPlan({
+        allergies: allergies.trim() || undefined,
+        preferences: preferences.trim() || undefined,
+      });
+
+      if (result.mealPlan && Array.isArray(result.mealPlan)) {
+        setPlan(result.mealPlan);
+        setShowForm(false);
+        Alert.alert(
+          'Thành công',
+          `Đã tạo kế hoạch ăn uống ${result.mealPlan.length} ngày với mục tiêu ${result.targetCalories} kcal/ngày!`
+        );
+      } else {
+        throw new Error('Invalid meal plan format');
+      }
+    } catch (error: any) {
+      console.error('Generate meal plan error:', error);
+      Alert.alert(
+        'Lỗi',
+        'Không thể tạo kế hoạch AI. Bạn muốn sử dụng kế hoạch mẫu không?',
+        [
+          { text: 'Hủy', style: 'cancel' },
+          {
+            text: 'Dùng mẫu',
+            onPress: () => {
               setPlan(HEALTHY_PLAN);
               setShowForm(false);
-              setLoading(false);
-              Alert.alert('Thành công', 'Đã tải kế hoạch bữa ăn lành mạnh!');
-            }, 1000);
+              Alert.alert('Thành công', 'Đã tải kế hoạch mẫu!');
+            },
           },
-        },
-      ]
-    );
+        ]
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   const renderMealCard = (meal: Meal | undefined, type: string) => {
     if (!meal) {
       return (
-        <View style={[styles.mealCard, { backgroundColor: getMealColor(type) }]}>
+        <View style={[styles.mealCard, styles.emptyMealCard]}>
           <View style={styles.mealHeader}>
-            <Ionicons name={getMealIcon(type) as any} size={22} color={colors.textSecondary} />
-            <Text style={styles.mealType}>{getMealTitle(type)}</Text>
+            <View style={[styles.mealIconBg, { backgroundColor: getMealColor(type) }]}>
+              <Ionicons name={getMealIcon(type) as any} size={20} color={colors.textSecondary} />
+            </View>
+            <View style={styles.mealTitleContainer}>
+              <Text style={styles.mealType}>{getMealTitle(type)}</Text>
+              <Text style={styles.emptyMealText}>Chưa có món ăn</Text>
+            </View>
           </View>
-          <Text style={styles.emptyMeal}>Chưa có bữa ăn</Text>
         </View>
       );
     }
 
     return (
-      <View style={[styles.mealCard, { backgroundColor: getMealColor(type) }]}>
+      <View style={styles.mealCard}>
         <View style={styles.mealHeader}>
-          <Ionicons name={getMealIcon(type) as any} size={22} color={colors.primary} />
-          <Text style={styles.mealType}>{getMealTitle(type)}</Text>
+          <View style={[styles.mealIconBg, { backgroundColor: getMealColor(type) }]}>
+            <Ionicons name={getMealIcon(type) as any} size={20} color={colors.primary} />
+          </View>
+          <View style={styles.mealTitleContainer}>
+            <Text style={styles.mealType}>{getMealTitle(type)}</Text>
+            <Text style={styles.mealName}>{meal.name}</Text>
+          </View>
         </View>
-        <Text style={styles.mealName}>{meal.name}</Text>
         <View style={styles.mealStats}>
           <View style={styles.mealStatItem}>
-            <Ionicons name="flame-outline" size={16} color={colors.warning} />
+            <View style={styles.statIconBg}>
+              <Ionicons name="flame" size={14} color="#EF4444" />
+            </View>
             <Text style={styles.statText}>{meal.calories} kcal</Text>
           </View>
           <View style={styles.mealStatItem}>
-            <Ionicons name="fitness-outline" size={16} color={colors.protein} />
+            <View style={[styles.statIconBg, { backgroundColor: '#DCFCE7' }]}>
+              <Ionicons name="fitness" size={14} color="#10B981" />
+            </View>
             <Text style={styles.statText}>{meal.protein}g protein</Text>
           </View>
         </View>
@@ -226,6 +258,7 @@ export default function MealPlanScreen() {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
+      
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
@@ -235,7 +268,7 @@ export default function MealPlanScreen() {
         <View style={styles.headerSpacer} />
       </View>
 
-      <ScrollView style={styles.content}>
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Week Tabs */}
         <View style={styles.weekTabsContainer}>
           <ScrollView
@@ -292,6 +325,14 @@ export default function MealPlanScreen() {
           {renderMealCard(plan[selectedDay]?.dinner, 'dinner')}
         </View>
       </ScrollView>
+
+      {/* Floating Action Button */}
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => setShowForm(true)}
+      >
+        <Ionicons name="add" size={28} color="#fff" />
+      </TouchableOpacity>
 
       {/* Generate Plan Modal */}
       <Modal
@@ -476,33 +517,53 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
   },
   mealCard: {
+    backgroundColor: '#fff',
     padding: spacing.lg,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.xl,
     marginBottom: spacing.md,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  emptyMealCard: {
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    borderStyle: 'dashed',
   },
   mealHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  mealIconBg: {
+    width: 44,
+    height: 44,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.md,
+  },
+  mealTitleContainer: {
+    flex: 1,
   },
   mealType: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: colors.text,
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 4,
   },
   mealName: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
     color: colors.text,
-    marginBottom: spacing.sm,
+    lineHeight: 22,
   },
-  emptyMeal: {
+  emptyMealText: {
     fontSize: 14,
     color: colors.textSecondary,
     fontStyle: 'italic',
@@ -514,12 +575,24 @@ const styles = StyleSheet.create({
   mealStatItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    backgroundColor: '#F9FAFB',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.md,
+    gap: 6,
+  },
+  statIconBg: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#FEE2E2',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   statText: {
     fontSize: 13,
-    color: colors.textSecondary,
-    fontWeight: '500',
+    color: colors.text,
+    fontWeight: '600',
   },
   // Modal
   modalOverlay: {
@@ -586,5 +659,21 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 30,
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
 });

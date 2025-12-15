@@ -19,4 +19,7 @@ router.post('/chat', requireAuth, aiController.chatWithAI);
 // Get AI context
 router.get('/context', requireAuth, aiController.getAIContext);
 
+// Generate meal plan
+router.post('/meal-plan', requireAuth, aiController.generateMealPlan);
+
 export default router;

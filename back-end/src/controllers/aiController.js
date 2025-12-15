@@ -691,3 +691,99 @@ export const getAIContext = async (req, res) => {
     res.status(500).json({ error: 'Failed to build AI context' });
   }
 };
+
+/**
+ * Generate 7-day meal plan using Gemini AI
+ */
+export const generateMealPlan = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { allergies, preferences } = req.body;
+
+    // Get user data
+    const user = await prisma.user.findUnique({
+      where: { user_id: userId },
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Calculate nutritional targets
+    const bmr = calculateBMR(user);
+    const tdee = calculateTDEE(user);
+    const targetCalories = user.goal === 'weight_loss' ? tdee - 500 
+                        : user.goal === 'muscle_gain' ? tdee + 300 
+                        : tdee;
+
+    const prompt = `Create a 7-day healthy meal plan in Vietnamese for a person with:
+- Goal: ${user.goal || 'maintenance'}
+- Daily calorie target: ${Math.round(targetCalories)} kcal
+- Allergies: ${allergies || 'None'}
+- Preferences: ${preferences || 'Balanced diet'}
+
+Return ONLY valid JSON array with 7 days, each day has breakfast, lunch, snack, dinner:
+[
+  {
+    "day": "Thứ Hai",
+    "date": "16 Th12",
+    "breakfast": { "name": "Món ăn", "calories": 400, "protein": 20 },
+    "lunch": { "name": "Món ăn", "calories": 500, "protein": 30 },
+    "snack": { "name": "Món ăn", "calories": 200, "protein": 10 },
+    "dinner": { "name": "Món ăn", "calories": 450, "protein": 25 }
+  }
+]
+
+Requirements:
+- All Vietnamese dish names
+- Realistic calorie distribution
+- High protein meals
+- Avoid allergies: ${allergies || 'none'}
+- Match preferences: ${preferences || 'balanced'}
+- Total daily calories around ${Math.round(targetCalories)} kcal
+- No markdown, ONLY JSON array`;
+
+    const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0.7,
+          topK: 40,
+          topP: 0.95,
+          maxOutputTokens: 2048,
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Gemini API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!text) {
+      throw new Error('No response from Gemini');
+    }
+
+    // Extract JSON from response
+    let mealPlan;
+    try {
+      const jsonMatch = text.match(/\[[\s\S]*\]/);
+      if (!jsonMatch) {
+        throw new Error('No JSON array found');
+      }
+      mealPlan = JSON.parse(jsonMatch[0]);
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError);
+      return res.status(500).json({ error: 'Failed to parse AI response' });
+    }
+
+    res.json({ mealPlan, targetCalories: Math.round(targetCalories) });
+  } catch (error) {
+    console.error('Generate meal plan error:', error);
+    res.status(500).json({ error: 'Failed to generate meal plan' });
+  }
+};

@@ -544,15 +544,16 @@ export default function CalendarScreen() {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
+      
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.title}>Lịch sức khỏe</Text>
-        <View style={styles.headerSpacer} />
+        <View style={styles.addButton} />
       </View>
-
+      
       {/* Month Navigation */}
       <View style={styles.monthNav}>
         <TouchableOpacity onPress={handlePreviousMonth} style={styles.monthButton}>
@@ -596,8 +597,8 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: colors.primary,
-    paddingTop: 40,
-    paddingBottom: spacing.sm,
+    paddingTop: 50,
+    paddingBottom: spacing.md,
     paddingHorizontal: spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
@@ -607,7 +608,7 @@ const styles = StyleSheet.create({
     padding: spacing.sm,
   },
   title: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '700',
     color: '#fff',
     letterSpacing: 0.3,
@@ -615,24 +616,25 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginRight: -40,
   },
-  headerSpacer: {
-    width: 40,
+  addButton: {
+    padding: spacing.sm,
   },
   monthNav: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: spacing.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
     backgroundColor: colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
   monthButton: {
-    padding: spacing.sm,
+    padding: spacing.xs,
   },
   monthTitle: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '600',
     color: colors.text,
     textTransform: 'capitalize',
   },

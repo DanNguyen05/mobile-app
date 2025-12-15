@@ -83,7 +83,7 @@ export const UtilitiesStackNavigator = () => {
       <Stack.Screen
         name="Calendar"
         component={CalendarScreen}
-        options={{ title: 'Lịch sức khỏe' }}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="HealthInsights"
@@ -98,7 +98,7 @@ export const UtilitiesStackNavigator = () => {
       <Stack.Screen
         name="HealthyMenu"
         component={HealthyMenuScreen}
-        options={{ title: 'Thực đơn healthy' }}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="Exercises"

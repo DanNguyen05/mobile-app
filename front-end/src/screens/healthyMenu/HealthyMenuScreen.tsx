@@ -9,8 +9,9 @@ import {
   Image,
   Modal,
   FlatList,
+  StatusBar,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { colors, spacing, borderRadius } from '../../context/ThemeContext';
@@ -32,7 +33,13 @@ interface Recipe {
   reviews: number;
 }
 
-const CATEGORIES = ['All', 'Breakfast', 'Lunch', 'Snack', 'Dinner'];
+const CATEGORIES = [
+  { key: 'All', label: 'Tất cả' },
+  { key: 'Breakfast', label: 'Sáng' },
+  { key: 'Lunch', label: 'Trưa' },
+  { key: 'Snack', label: 'Phụ' },
+  { key: 'Dinner', label: 'Tối' }
+];
 
 const RECIPES: Recipe[] = [
   // BREAKFAST
@@ -333,6 +340,7 @@ const RECIPES: Recipe[] = [
 ];
 
 export default function HealthyMenuScreen() {
+  const navigation = useNavigation();
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
 
@@ -386,11 +394,22 @@ export default function HealthyMenuScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
+      
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Thực đơn lành mạnh</Text>
-        <Text style={styles.subtitle}>{filteredRecipes.length} công thức</Text>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="#fff" />
+        </TouchableOpacity>
+        <Text style={styles.title}>Thực đơn healthy</Text>
+        <View style={styles.headerRight} />
+      </View>
+
+      {/* Subtitle */}
+      <View style={styles.subtitleContainer}>
+        <Text style={styles.subtitle}>Thực đơn lành mạnh</Text>
+        <Text style={styles.recipeCount}>{filteredRecipes.length} công thức</Text>
       </View>
 
       {/* Categories */}
@@ -402,18 +421,18 @@ export default function HealthyMenuScreen() {
       >
         {CATEGORIES.map(category => (
           <TouchableOpacity
-            key={category}
+            key={category.key}
             style={[
               styles.categoryButton,
-              selectedCategory === category && styles.categoryButtonActive
+              selectedCategory === category.key && styles.categoryButtonActive
             ]}
-            onPress={() => setSelectedCategory(category)}
+            onPress={() => setSelectedCategory(category.key)}
           >
             <Text style={[
               styles.categoryText,
-              selectedCategory === category && styles.categoryTextActive
+              selectedCategory === category.key && styles.categoryTextActive
             ]}>
-              {category}
+              {category.label}
             </Text>
           </TouchableOpacity>
         ))}
@@ -504,7 +523,7 @@ export default function HealthyMenuScreen() {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -514,15 +533,40 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   header: {
-    padding: spacing.md,
-    paddingBottom: spacing.sm,
+    backgroundColor: colors.primary,
+    paddingTop: 50,
+    paddingBottom: spacing.md,
+    paddingHorizontal: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  backButton: {
+    padding: spacing.sm,
   },
   title: {
-    fontSize: 24,
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#fff',
+    letterSpacing: 0.3,
+    flex: 1,
+    textAlign: 'center',
+    marginRight: -40,
+  },
+  headerRight: {
+    width: 40,
+  },
+  subtitleContainer: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.background,
+  },
+  subtitle: {
+    fontSize: 22,
     fontWeight: '700',
     color: colors.text,
   },
-  subtitle: {
+  recipeCount: {
     fontSize: 14,
     color: colors.textSecondary,
     marginTop: 4,
@@ -536,25 +580,33 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   categoryButton: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     borderRadius: borderRadius.full,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginRight: spacing.sm,
+    backgroundColor: '#fff',
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   categoryButtonActive: {
     backgroundColor: colors.primary,
     borderColor: colors.primary,
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 2,
   },
   categoryText: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '600',
     color: colors.text,
   },
   categoryTextActive: {
     color: '#fff',
+    fontWeight: '700',
   },
   recipesGrid: {
     padding: spacing.md,
@@ -563,26 +615,30 @@ const styles = StyleSheet.create({
   recipeCard: {
     flex: 1,
     margin: spacing.xs,
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.md,
+    backgroundColor: '#fff',
+    borderRadius: borderRadius.lg,
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: colors.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
   },
   recipeImage: {
     width: '100%',
-    height: 140,
+    height: 160,
     backgroundColor: '#f0f0f0',
   },
   recipeInfo: {
-    padding: spacing.sm,
+    padding: spacing.md,
   },
   recipeName: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
     color: colors.text,
-    marginBottom: spacing.xs,
-    minHeight: 36,
+    marginBottom: spacing.sm,
+    minHeight: 40,
+    lineHeight: 20,
   },
   recipeStats: {
     flexDirection: 'row',

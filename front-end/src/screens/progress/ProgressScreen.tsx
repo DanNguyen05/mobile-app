@@ -8,11 +8,13 @@ import {
   RefreshControl,
   TouchableOpacity,
   Dimensions,
+  Alert,
+  StatusBar,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { format, subDays } from 'date-fns';
 import { LineChart } from 'react-native-chart-kit';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
 
 import { useAuth } from '../../context/AuthContext';
 import { api, type DailyStatistics } from '../../services/api';
@@ -26,7 +28,7 @@ export default function ProgressScreen() {
   const [weeklyStats, setWeeklyStats] = useState<DailyStatistics[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [activeTab, setActiveTab] = useState<'calories' | 'protein'>('calories');
+  const [activeTab, setActiveTab] = useState<'calories' | 'protein' | 'carbs' | 'fat'>('calories');
 
   const fetchData = useCallback(async () => {
     try {
@@ -36,6 +38,16 @@ export default function ProgressScreen() {
       setWeeklyStats(statsRes);
     } catch (error: any) {
       console.error('Error fetching progress data:', error);
+      
+      // Kiểm tra nếu là lỗi 401 (Unauthorized)
+      if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
+        Alert.alert(
+          'Phiên đăng nhập hết hạn',
+          'Vui lòng đăng xuất và đăng nhập lại.',
+          [{ text: 'Đã hiểu' }]
+        );
+      }
+      
       setWeeklyStats([]);
     }
   }, []);
@@ -61,6 +73,12 @@ export default function ProgressScreen() {
     : [0, 0, 0, 0, 0, 0, 0];
   const proteinData = weeklyStats.length > 0
     ? weeklyStats.map((s) => s.total_protein || 0)
+    : [0, 0, 0, 0, 0, 0, 0];
+  const carbsData = weeklyStats.length > 0
+    ? weeklyStats.map((s) => s.total_carbs || 0)
+    : [0, 0, 0, 0, 0, 0, 0];
+  const fatData = weeklyStats.length > 0
+    ? weeklyStats.map((s) => s.total_fat || 0)
     : [0, 0, 0, 0, 0, 0, 0];
   const labels = weeklyStats.length > 0
     ? weeklyStats.map((s) => format(new Date(s.date), 'dd/MM'))
@@ -117,13 +135,17 @@ export default function ProgressScreen() {
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
+      
+      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Tiến trình</Text>
-        <View style={styles.headerSpacer} />
+        <Text style={styles.title}>Tiến trình</Text>
+        <View style={styles.headerRight} />
       </View>
+      
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
@@ -180,6 +202,22 @@ export default function ProgressScreen() {
               Protein
             </Text>
           </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'carbs' && styles.tabActive]}
+            onPress={() => setActiveTab('carbs')}
+          >
+            <Text style={[styles.tabText, activeTab === 'carbs' && styles.tabTextActive]}>
+              Carbs
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'fat' && styles.tabActive]}
+            onPress={() => setActiveTab('fat')}
+          >
+            <Text style={[styles.tabText, activeTab === 'fat' && styles.tabTextActive]}>
+              Fat
+            </Text>
+          </TouchableOpacity>
         </View>
 
         {/* Chart Card */}
@@ -189,7 +227,10 @@ export default function ProgressScreen() {
               data={{
                 labels: labels,
                 datasets: [{ 
-                  data: activeTab === 'calories' ? caloriesData : proteinData 
+                  data: activeTab === 'calories' ? caloriesData 
+                      : activeTab === 'protein' ? proteinData
+                      : activeTab === 'carbs' ? carbsData
+                      : fatData
                 }],
               }}
               width={width - spacing.md * 4}
@@ -251,26 +292,27 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     backgroundColor: colors.primary,
     paddingTop: 50,
-    paddingHorizontal: spacing.lg,
     paddingBottom: spacing.md,
+    paddingHorizontal: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   backButton: {
     padding: spacing.sm,
   },
-  headerTitle: {
-    flex: 1,
+  title: {
     fontSize: 20,
     fontWeight: '700',
     color: '#fff',
+    letterSpacing: 0.3,
+    flex: 1,
     textAlign: 'center',
     marginRight: -40,
   },
-  headerSpacer: {
+  headerRight: {
     width: 40,
   },
   loadingContainer: {
