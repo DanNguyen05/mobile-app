@@ -163,24 +163,6 @@ const UtilitiesScreen = () => {
       icon: 'water',
       onPress: navigateToWaterIntake,
     },
-    {
-      id: 'measurements',
-      title: 'Số đo',
-      icon: 'resize',
-      onPress: navigateToMeasurements,
-    },
-    {
-      id: 'reminders',
-      title: 'Nhắc nhở',
-      icon: 'notifications',
-      onPress: navigateToReminders,
-    },
-    {
-      id: 'profile',
-      title: 'Hồ sơ',
-      icon: 'person',
-      onPress: navigateToProfile,
-    },
   ];
 
   return (

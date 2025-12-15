@@ -15,6 +15,7 @@ import {
   Animated,
   StatusBar,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
@@ -45,14 +46,6 @@ interface ChatHistoryItem {
   role: 'user' | 'assistant';
   content: string;
 }
-
-const QUICK_REPLIES = [
-  { text: '📸 Phân tích đồ ăn', icon: 'camera-outline' },
-  { text: '🔥 Hôm nay ăn bao nhiêu calo?', icon: 'flame-outline' },
-  { text: '💪 Gợi ý bài tập', icon: 'barbell-outline' },
-  { text: '📊 Tiến trình của tôi', icon: 'stats-chart-outline' },
-  { text: '🥗 Gợi ý thực đơn healthy', icon: 'restaurant-outline' },
-];
 
 // Typing indicator component
 const TypingIndicator = () => {
@@ -108,14 +101,7 @@ const TypingIndicator = () => {
 export default function MessagesScreen() {
   const { user } = useAuth();
   const navigation = useNavigation();
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      text: 'Xin chào! 👋 Tôi là trợ lý AI sức khỏe.\n\nTôi có thể hỗ trợ bạn:\n\n📸 Nhận diện món ăn qua ảnh\n💪 Tư vấn bài tập phù hợp\n🥗 Gợi ý thực đơn healthy\n📊 Phân tích tiến trình\n\nHãy hỏi tôi bất cứ điều gì! 😊',
-      isUser: false,
-      timestamp: new Date(),
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
   const [chatHistory, setChatHistory] = useState<ChatHistoryItem[]>([]);
@@ -131,12 +117,54 @@ export default function MessagesScreen() {
     workoutDays: 3,
   };
 
+  // Load chat history from storage
+  useEffect(() => {
+    loadChatHistory();
+  }, []);
+
+  const loadChatHistory = async () => {
+    try {
+      const savedMessages = await AsyncStorage.getItem('chatMessages');
+      const savedHistory = await AsyncStorage.getItem('chatHistory');
+      if (savedMessages) {
+        const parsed = JSON.parse(savedMessages);
+        // Convert timestamp strings back to Date objects
+        const messagesWithDates = parsed.map((msg: any) => ({
+          ...msg,
+          timestamp: new Date(msg.timestamp)
+        }));
+        setMessages(messagesWithDates);
+      }
+      if (savedHistory) {
+        setChatHistory(JSON.parse(savedHistory));
+      }
+    } catch (error) {
+      console.error('Error loading chat history:', error);
+    }
+  };
+
+  const saveChatHistory = async (msgs: Message[], history: ChatHistoryItem[]) => {
+    try {
+      await AsyncStorage.setItem('chatMessages', JSON.stringify(msgs));
+      await AsyncStorage.setItem('chatHistory', JSON.stringify(history));
+    } catch (error) {
+      console.error('Error saving chat history:', error);
+    }
+  };
+
   // Auto scroll to bottom
   useEffect(() => {
     setTimeout(() => {
       scrollViewRef.current?.scrollToEnd({ animated: true });
     }, 100);
   }, [messages]);
+
+  // Save chat history whenever messages or chatHistory change
+  useEffect(() => {
+    if (messages.length > 0) {
+      saveChatHistory(messages, chatHistory);
+    }
+  }, [messages, chatHistory]);
 
   // Counter for unique IDs
   const idCounterRef = useRef(0);
@@ -148,7 +176,10 @@ export default function MessagesScreen() {
       id: `msg_${Date.now()}_${idCounterRef.current}`,
       timestamp: new Date(),
     };
-    setMessages((prev) => [...prev, newMessage]);
+    setMessages((prev) => {
+      const updated = [...prev, newMessage];
+      return updated;
+    });
     return newMessage.id;
   };
 
@@ -221,163 +252,7 @@ export default function MessagesScreen() {
     }
   };
 
-  const handleImagePick = async () => {
-    try {
-      const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
-      
-      if (!permissionResult.granted) {
-        Alert.alert('Quyền truy cập', 'Cần quyền truy cập camera để chụp ảnh đồ ăn');
-        return;
-      }
-
-      const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ['images'],
-        quality: 0.8,
-        base64: true,
-        allowsEditing: true,
-        aspect: [4, 3],
-      });
-
-      if (!result.canceled && result.assets[0]) {
-        const asset = result.assets[0];
-        
-        // Add user message with image
-        addMessage({
-          text: '📸 Đang phân tích đồ ăn...',
-          isUser: true,
-          imageUri: asset.uri,
-        });
-
-        setLoading(true);
-        const loadingId = addMessage({ text: 'Đang nhận diện đồ ăn...', isUser: false, isLoading: true });
-
-        try {
-          // Analyze food from image and save automatically
-          const now = new Date();
-          const hour = now.getHours();
-          const mealType = 
-            hour >= 5 && hour < 11 ? 'breakfast' :
-            hour >= 11 && hour < 14 ? 'lunch' :
-            hour >= 18 && hour < 22 ? 'dinner' : 'snack';
-
-          const { analysis, foodLogId, error } = await analyzeAndSaveFood(asset.base64 || '', mealType);
-
-          if (error || !analysis.foodName || analysis.foodName === 'Không xác định') {
-            updateMessage(loadingId, {
-              text: `❌ Không thể nhận diện đồ ăn\n\n${error || 'Hình ảnh không rõ hoặc không phải đồ ăn.'}\n\n💡 Gợi ý:\n• Chụp ảnh rõ nét hơn\n• Đảm bảo đồ ăn ở trung tâm\n• Có đủ ánh sáng`,
-              isLoading: false,
-            });
-          } else {
-            updateMessage(loadingId, {
-              text: `✅ **${analysis.foodName}** - ${analysis.amount}\n\n📊 Thông tin dinh dưỡng:\n• Calories: ${analysis.calories} kcal\n• Protein: ${analysis.protein}g\n• Carbs: ${analysis.carbs}g\n• Fat: ${analysis.fat}g\n\n✅ Đã lưu vào nhật ký ăn uống! (ID: ${foodLogId})`,
-              isLoading: false,
-              nutritionData: {
-                foodName: analysis.foodName,
-                calories: analysis.calories,
-                protein: analysis.protein,
-                carbs: analysis.carbs,
-                fat: analysis.fat,
-              },
-            });
-          }
-        } catch (analysisError: any) {
-          console.error('Food analysis error:', analysisError);
-          updateMessage(loadingId, {
-            text: `❌ Lỗi phân tích: ${analysisError.message || 'Không thể kết nối server'}`,
-            isLoading: false,
-          });
-        }
-
-        setLoading(false);
-      }
-    } catch (error) {
-      console.error('Image picker error:', error);
-      Alert.alert('Lỗi', 'Không thể mở camera');
-    }
-  };
-
-  const handleGalleryPick = async () => {
-    try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
-        quality: 0.8,
-        base64: true,
-        allowsEditing: true,
-        aspect: [4, 3],
-      });
-
-      if (!result.canceled && result.assets[0]) {
-        const asset = result.assets[0];
-        
-        addMessage({
-          text: '📸 Đang phân tích đồ ăn...',
-          isUser: true,
-          imageUri: asset.uri,
-        });
-
-        setLoading(true);
-        const loadingId = addMessage({ text: 'Đang nhận diện đồ ăn...', isUser: false, isLoading: true });
-
-        try {
-          // Analyze food from gallery image and save automatically
-          const now = new Date();
-          const hour = now.getHours();
-          const mealType = 
-            hour >= 5 && hour < 11 ? 'breakfast' :
-            hour >= 11 && hour < 14 ? 'lunch' :
-            hour >= 18 && hour < 22 ? 'dinner' : 'snack';
-
-          const { analysis, foodLogId, error } = await analyzeAndSaveFood(asset.base64 || '', mealType);
-
-          if (error || !analysis.foodName || analysis.foodName === 'Không xác định') {
-            updateMessage(loadingId, {
-              text: `❌ Không thể nhận diện đồ ăn\n\n${error || 'Hình ảnh không rõ.'}\n\n💡 Thử chọn ảnh khác rõ nét hơn.`,
-              isLoading: false,
-            });
-          } else {
-            updateMessage(loadingId, {
-              text: `✅ **${analysis.foodName}** - ${analysis.amount}\n\n📊 Thông tin dinh dưỡng:\n• Calories: ${analysis.calories} kcal\n• Protein: ${analysis.protein}g\n• Carbs: ${analysis.carbs}g\n• Fat: ${analysis.fat}g\n\n✅ Đã lưu vào nhật ký ăn uống! (ID: ${foodLogId})`,
-              isLoading: false,
-              nutritionData: {
-                foodName: analysis.foodName,
-                calories: analysis.calories,
-                protein: analysis.protein,
-                carbs: analysis.carbs,
-                fat: analysis.fat,
-              },
-            });
-          }
-        } catch (analysisError: any) {
-          updateMessage(loadingId, {
-            text: `❌ Lỗi: ${analysisError.message}`,
-            isLoading: false,
-          });
-        }
-
-        setLoading(false);
-      }
-    } catch (error) {
-      console.error('Gallery picker error:', error);
-    }
-  };
-
-  const handleQuickReply = (reply: { text: string; icon: string }) => {
-    if (reply.text.includes('Phân tích đồ ăn')) {
-      Alert.alert(
-        'Phân tích đồ ăn',
-        'Chọn nguồn ảnh',
-        [
-          { text: '📷 Chụp ảnh', onPress: handleImagePick },
-          { text: '🖼️ Thư viện', onPress: handleGalleryPick },
-          { text: 'Hủy', style: 'cancel' },
-        ]
-      );
-    } else {
-      handleSend(reply.text);
-    }
-  };
-
-  const clearChat = () => {
+  const clearChat = async () => {
     Alert.alert(
       'Xóa lịch sử chat',
       'Bạn có chắc muốn xóa toàn bộ lịch sử chat?',
@@ -386,16 +261,15 @@ export default function MessagesScreen() {
         {
           text: 'Xóa',
           style: 'destructive',
-          onPress: () => {
-            setMessages([
-              {
-                id: '1',
-                text: 'Xin chào! 👋 Tôi là trợ lý AI sức khỏe.\n\nTôi có thể hỗ trợ bạn:\n\n📸 Nhận diện món ăn qua ảnh\n💪 Tư vấn bài tập phù hợp\n🥗 Gợi ý thực đơn healthy\n📊 Phân tích tiến trình\n\nHãy hỏi tôi bất cứ điều gì! 😊',
-                isUser: false,
-                timestamp: new Date(),
-              },
-            ]);
+          onPress: async () => {
+            setMessages([]);
             setChatHistory([]);
+            try {
+              await AsyncStorage.removeItem('chatMessages');
+              await AsyncStorage.removeItem('chatHistory');
+            } catch (error) {
+              console.error('Error clearing chat:', error);
+            }
           },
         },
       ]
@@ -409,9 +283,9 @@ export default function MessagesScreen() {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.title}>Trợ lý AI</Text>
+        <Text style={styles.title}>Chat AI</Text>
         <TouchableOpacity onPress={clearChat} style={styles.clearButton} activeOpacity={0.7}>
-          <Ionicons name="refresh-outline" size={22} color="#fff" />
+          <Ionicons name="trash-outline" size={20} color="#fff" />
         </TouchableOpacity>
       </View>
 
@@ -426,6 +300,13 @@ export default function MessagesScreen() {
           contentContainerStyle={styles.messagesContent}
           showsVerticalScrollIndicator={false}
         >
+          {messages.length === 0 && (
+            <View style={styles.emptyState}>
+              <Ionicons name="chatbubbles-outline" size={64} color={colors.textLight} />
+              <Text style={styles.emptyStateText}>Tôi có thể giúp gì cho bạn?</Text>
+            </View>
+          )}
+
           {messages.map((message) => (
             <View
               key={message.id}
@@ -549,83 +430,21 @@ export default function MessagesScreen() {
               </View>
             </View>
           ))}
-
-          {/* Enhanced Quick Replies */}
-          {messages.length <= 2 && !loading && (
-            <View style={styles.quickRepliesContainer}>
-              <Text style={styles.quickRepliesTitle}>💡 Gợi ý nhanh cho bạn</Text>
-              {QUICK_REPLIES.slice(0, 2).map((reply, index) => (
-                <TouchableOpacity
-                  key={index}
-                  onPress={() => handleQuickReply(reply)}
-                  activeOpacity={0.7}
-                  style={styles.quickReplyCard}
-                >
-                  <View style={styles.quickReplyIconContainer}>
-                    <Ionicons name={reply.icon as any} size={24} color={colors.primary} />
-                  </View>
-                  <Text style={styles.quickReplyText}>{reply.text}</Text>
-                  <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
-                </TouchableOpacity>
-              ))}
-              <View style={styles.quickRepliesRow}>
-                {QUICK_REPLIES.slice(2).map((reply, index) => (
-                  <TouchableOpacity
-                    key={index + 2}
-                    onPress={() => handleQuickReply(reply)}
-                    activeOpacity={0.7}
-                    style={styles.quickReplySmallCard}
-                  >
-                    <Ionicons name={reply.icon as any} size={20} color={colors.primary} />
-                    <Text style={styles.quickReplySmallText} numberOfLines={2}>{reply.text}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          )}
         </ScrollView>
 
-        {/* Enhanced Input Container */}
+        {/* Input Container */}
         <View style={styles.inputWrapper}>
           <View style={styles.inputContainer}>
-            <TouchableOpacity
-              style={[styles.iconButton, loading && styles.iconButtonDisabled]}
-              onPress={handleImagePick}
-              disabled={loading}
-              activeOpacity={0.7}
-            >
-              <Ionicons 
-                name="camera" 
-                size={22} 
-                color={loading ? colors.textLight : colors.primary} 
-              />
-            </TouchableOpacity>
-            
-            <TouchableOpacity
-              style={[styles.iconButton, loading && styles.iconButtonDisabled]}
-              onPress={handleGalleryPick}
-              disabled={loading}
-              activeOpacity={0.7}
-            >
-              <Ionicons 
-                name="image" 
-                size={22} 
-                color={loading ? colors.textLight : colors.primary} 
-              />
-            </TouchableOpacity>
-
-            <View style={styles.inputBox}>
-              <TextInput
-                style={styles.input}
-                placeholder="Nhập tin nhắn..."
-                placeholderTextColor={colors.textLight}
-                value={inputText}
-                onChangeText={setInputText}
-                multiline
-                maxLength={500}
-                editable={!loading}
-              />
-            </View>
+            <TextInput
+              style={styles.input}
+              placeholder="Nhắn tin cho Chat AI..."
+              placeholderTextColor={colors.textLight}
+              value={inputText}
+              onChangeText={setInputText}
+              multiline
+              maxLength={1000}
+              editable={!loading}
+            />
             
             <TouchableOpacity
               style={[
@@ -636,11 +455,11 @@ export default function MessagesScreen() {
               disabled={!inputText.trim() || loading}
               activeOpacity={0.7}
             >
-              <Ionicons
-                name="send"
-                size={18}
-                color="#fff"
-              />
+              {loading ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Ionicons name="arrow-up" size={20} color="#fff" />
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -652,7 +471,7 @@ export default function MessagesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F7FA',
+    backgroundColor: '#fff',
   },
   header: {
     backgroundColor: colors.primary,
@@ -665,21 +484,18 @@ const styles = StyleSheet.create({
   },
   backButton: {
     padding: spacing.sm,
+    marginLeft: -8,
   },
   title: {
-    fontSize: 20,
-    fontWeight: '700',
+    fontSize: 18,
+    fontWeight: '600',
     color: '#fff',
-    letterSpacing: 0.3,
     flex: 1,
     textAlign: 'center',
     marginRight: -40,
   },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#fff',
-    letterSpacing: 0.3,
+  headerRight: {
+    width: 40,
   },
   clearButton: {
     padding: spacing.sm,
@@ -691,12 +507,25 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   messagesContent: {
-    padding: spacing.md,
+    padding: spacing.lg,
     paddingBottom: 100,
+    flexGrow: 1,
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 120,
+  },
+  emptyStateText: {
+    fontSize: 16,
+    color: colors.textLight,
+    marginTop: spacing.md,
+    fontWeight: '500',
   },
   messageWrapper: {
-    marginBottom: spacing.md,
-    maxWidth: '85%',
+    marginBottom: spacing.lg,
+    maxWidth: '80%',
   },
   userWrapper: {
     alignSelf: 'flex-end',
@@ -705,21 +534,15 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   messageBubble: {
-    padding: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     borderRadius: borderRadius.xl,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
-    elevation: 2,
   },
   userBubble: {
     backgroundColor: colors.primary,
-    borderBottomRightRadius: 6,
   },
   aiBubble: {
-    backgroundColor: '#fff',
-    borderBottomLeftRadius: 6,
+    backgroundColor: '#F7F7F8',
   },
   imageContainer: {
     marginBottom: spacing.sm,
@@ -918,57 +741,39 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 2,
   },
-  quickReplySmallText: {
-    fontSize: 11,
-    color: colors.text,
-    fontWeight: '600',
-    textAlign: 'center',
-    lineHeight: 14,
-  },
   inputWrapper: {
     backgroundColor: '#fff',
     borderTopWidth: 1,
     borderTopColor: '#E5E7EB',
-    paddingTop: spacing.md,
-    paddingBottom: Platform.OS === 'ios' ? spacing.lg : spacing.md,
-    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: Platform.OS === 'ios' ? spacing.xl : spacing.md,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    gap: spacing.sm,
-  },
-  iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.lg,
-    backgroundColor: colors.primaryLight,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  iconButtonDisabled: {
-    opacity: 0.3,
-  },
-  inputBox: {
-    flex: 1,
-    backgroundColor: '#F3F4F6',
-    borderRadius: borderRadius.xl,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    backgroundColor: '#F7F7F8',
+    borderRadius: borderRadius.full,
+    paddingLeft: spacing.lg,
+    paddingRight: 6,
+    paddingVertical: 6,
   },
   input: {
-    fontSize: 15,
+    flex: 1,
+    fontSize: 16,
     color: colors.text,
     maxHeight: 100,
-    minHeight: 40,
+    minHeight: 24,
+    paddingVertical: spacing.xs,
   },
   sendButton: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.lg,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
+    marginLeft: spacing.sm,
   },
   sendButtonDisabled: {
     backgroundColor: '#D1D5DB',

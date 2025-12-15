@@ -142,6 +142,50 @@ export default function SettingsScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Reminders Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Nhắc nhở</Text>
+          
+          <View style={styles.settingItem}>
+            <View style={styles.settingLeft}>
+              <Ionicons name="water-outline" size={22} color="#45B7D1" />
+              <Text style={styles.settingLabel}>Nhắc uống nước</Text>
+            </View>
+            <Switch
+              value={true}
+              onValueChange={() => {}}
+              trackColor={{ false: colors.border, true: colors.primaryLight }}
+              thumbColor={colors.primary}
+            />
+          </View>
+
+          <View style={styles.settingItem}>
+            <View style={styles.settingLeft}>
+              <Ionicons name="restaurant-outline" size={22} color="#FF6B6B" />
+              <Text style={styles.settingLabel}>Nhắc bữa ăn</Text>
+            </View>
+            <Switch
+              value={true}
+              onValueChange={() => {}}
+              trackColor={{ false: colors.border, true: colors.primaryLight }}
+              thumbColor={colors.primary}
+            />
+          </View>
+
+          <View style={styles.settingItem}>
+            <View style={styles.settingLeft}>
+              <Ionicons name="barbell-outline" size={22} color="#95E1D3" />
+              <Text style={styles.settingLabel}>Nhắc tập luyện</Text>
+            </View>
+            <Switch
+              value={false}
+              onValueChange={() => {}}
+              trackColor={{ false: colors.border, true: colors.primaryLight }}
+              thumbColor={colors.surface}
+            />
+          </View>
+        </View>
+
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Hỗ trợ</Text>
           

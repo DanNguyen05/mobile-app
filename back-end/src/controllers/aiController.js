@@ -577,18 +577,28 @@ export const chatWithAI = async (req, res) => {
       return res.status(400).json({ error: 'Message is required' });
     }
 
-    let systemPrompt = `You are a helpful health and fitness AI assistant. 
-IMPORTANT: You MUST respond in English only, regardless of the user's language.
-Provide concise, personalized health advice based on the user's profile.
-Keep responses brief and actionable (max 3-4 sentences).`;
+    let systemPrompt = `Bạn là trợ lý AI về sức khỏe và thể hình thân thiện và chuyên nghiệp.
+
+NGUYÊN TẮC QUAN TRỌNG:
+✓ LUÔN trả lời BẰNG TIẾNG VIỆT
+✓ Ngắn gọn nhưng đầy đủ ý, đi thẳng vào vấn đề
+✓ Cá nhân hóa dựa trên thông tin người dùng
+✓ Sử dụng 1-2 emoji phù hợp để thân thiện
+✓ Tập trung vào lời khuyên thực tế, dễ thực hiện
+✓ Giải thích rõ ràng khi cần, nhưng tránh lan man
+
+CẤU TRÚC PHẢN HỒI:
+- Trả lời trực tiếp câu hỏi
+- Đưa ra lời khuyên cụ thể (bullet points nếu cần)
+- Kết thúc bằng động viên ngắn gọn`;
 
     if (userProfile) {
-      systemPrompt += `\n\nUser Profile:
-- Age: ${userProfile.age || 'unknown'}
-- Gender: ${userProfile.gender || 'unknown'}
-- Weight: ${userProfile.weight || 'unknown'}kg
-- Height: ${userProfile.height || 'unknown'}cm
-- Goal: ${userProfile.goal || 'general health'}`;
+      systemPrompt += `\n\nThông tin người dùng:
+- Tuổi: ${userProfile.age || 'chưa rõ'}
+- Giới tính: ${userProfile.gender === 'Male' ? 'Nam' : userProfile.gender === 'Female' ? 'Nữ' : 'chưa rõ'}
+- Cân nặng: ${userProfile.weight || 'chưa rõ'}kg
+- Chiều cao: ${userProfile.height || 'chưa rõ'}cm
+- Mục tiêu: ${userProfile.goal === 'lose' ? 'giảm cân' : userProfile.goal === 'gain' ? 'tăng cân' : userProfile.goal === 'maintain' ? 'duy trì' : 'sức khỏe tổng quát'}`;
     }
 
     // Build conversation history for Gemini
@@ -597,38 +607,88 @@ Keep responses brief and actionable (max 3-4 sentences).`;
       parts: [{ text: msg.content }]
     }));
 
-    const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: [
-          ...conversationHistory,
-          {
-            role: 'user',
-            parts: [{ text: systemPrompt + '\n\n' + message }]
-          }
-        ],
-        generationConfig: {
-          temperature: 0.5,
-          topP: 0.8,
-          maxOutputTokens: 500,
-        }
-      }),
-    });
+    // Retry logic for API calls
+    let lastError;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            contents: [
+              ...conversationHistory,
+              {
+                role: 'user',
+                parts: [{ text: systemPrompt + '\n\n' + message }]
+              }
+            ],
+            generationConfig: {
+              temperature: 0.7,
+              topP: 0.9,
+              maxOutputTokens: 1500,
+            }
+          }),
+        });
 
-    if (!response.ok) {
-      throw new Error(`Gemini API error: ${response.status}`);
+        if (!response.ok) {
+          const errorText = await response.text().catch(() => '');
+          lastError = new Error(`Gemini API error: ${response.status} - ${errorText}`);
+          
+          // Handle quota exceeded (429) - don't retry, return immediately
+          if (response.status === 429) {
+            console.log('Gemini API quota exceeded');
+            const quotaResponse = `Xin lỗi, hạn mức sử dụng AI hôm nay đã hết. 😔
+
+Bạn vẫn có thể:
+• Sử dụng các tính năng khác trong ứng dụng
+• Quay lại vào ngày mai để tiếp tục chat
+• Theo dõi tiến trình, thực đơn, và bài tập
+
+Cảm ơn bạn đã sử dụng! 💪`;
+            return res.json({ reply: quotaResponse });
+          }
+          
+          // If it's a 503, wait and retry
+          if (response.status === 503 && attempt < 2) {
+            await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+            continue;
+          }
+          throw lastError;
+        }
+
+        const data = await response.json();
+        const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Xin lỗi, tôi không thể tạo phản hồi.';
+
+        return res.json({ reply });
+      } catch (err) {
+        lastError = err;
+        if (attempt < 2) {
+          await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+        }
+      }
     }
 
-    const data = await response.json();
-    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'I\'m sorry, I couldn\'t generate a response.';
+    // If all retries failed, return a friendly fallback
+    console.error('Gemini chat error after retries:', lastError);
+    
+    // Return a helpful fallback response
+    const fallbackResponse = `Xin lỗi, hiện tại tôi đang gặp chút vấn đề kỹ thuật. 😔
 
-    res.json({ reply });
+Tuy nhiên, tôi vẫn sẵn sàng giúp bạn! Bạn có thể:
+• Thử lại câu hỏi sau vài giây
+• Hỏi tôi về dinh dưỡng, tập luyện, hoặc mục tiêu sức khỏe
+• Sử dụng các tính năng khác trong ứng dụng
+
+Cảm ơn bạn đã kiên nhẫn! 💪`;
+
+    res.json({ reply: fallbackResponse });
   } catch (error) {
-    console.error('Gemini chat error:', error);
-    res.status(500).json({ error: 'Failed to get AI response', details: error.message });
+    console.error('Gemini chat unexpected error:', error);
+    res.json({ 
+      reply: 'Xin lỗi, đã có lỗi xảy ra. Vui lòng thử lại sau! 🙏' 
+    });
   }
 };
 

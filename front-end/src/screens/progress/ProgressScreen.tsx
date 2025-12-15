@@ -10,6 +10,9 @@ import {
   Dimensions,
   Alert,
   StatusBar,
+  Modal,
+  TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { format, subDays } from 'date-fns';
@@ -23,12 +26,16 @@ import { colors, spacing, borderRadius } from '../../context/ThemeContext';
 const { width } = Dimensions.get('window');
 
 export default function ProgressScreen() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const navigation = useNavigation();
   const [weeklyStats, setWeeklyStats] = useState<DailyStatistics[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<'calories' | 'protein' | 'carbs' | 'fat'>('calories');
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [editWeight, setEditWeight] = useState('');
+  const [editHeight, setEditHeight] = useState('');
 
   const fetchData = useCallback(async () => {
     try {
@@ -121,6 +128,29 @@ export default function ProgressScreen() {
     protein: weeklyStats.reduce((sum, s) => sum + (s.total_protein || 0), 0),
     carbs: weeklyStats.reduce((sum, s) => sum + (s.total_carbs || 0), 0),
     fat: weeklyStats.reduce((sum, s) => sum + (s.total_fat || 0), 0),
+  };
+
+  const handleEditMeasurements = () => {
+    setEditWeight(user?.weight_kg?.toString() || '');
+    setEditHeight(user?.height_cm?.toString() || '');
+    setShowEditModal(true);
+  };
+
+  const handleSaveMeasurements = async () => {
+    setSaving(true);
+    try {
+      await api.updateCurrentUser({
+        weightKg: parseFloat(editWeight) || undefined,
+        heightCm: parseFloat(editHeight) || undefined,
+      });
+      await refreshUser();
+      setShowEditModal(false);
+      Alert.alert('Thành công', 'Cập nhật số đo thành công!');
+    } catch (error: any) {
+      Alert.alert('Lỗi', error.message || 'Không thể cập nhật số đo');
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (loading) {
@@ -281,7 +311,102 @@ export default function ProgressScreen() {
             </View>
           </View>
         </View>
+
+        {/* Body Measurements */}
+        <View style={styles.measurementsCard}>
+          <View style={styles.cardHeader}>
+            <Ionicons name="body" size={24} color={colors.primary} />
+            <Text style={styles.cardTitle}>Số đo cơ thể</Text>
+            <TouchableOpacity onPress={handleEditMeasurements} style={styles.editIconButton}>
+              <Ionicons name="pencil" size={18} color={colors.primary} />
+            </TouchableOpacity>
+          </View>
+          <View style={styles.measurementsGrid}>
+            <TouchableOpacity style={styles.measurementItem} onPress={handleEditMeasurements} activeOpacity={0.7}>
+              <View style={[styles.measurementIcon, { backgroundColor: '#FF6B6B20' }]}>
+                <Ionicons name="scale-outline" size={24} color="#FF6B6B" />
+              </View>
+              <Text style={styles.measurementValue}>{user?.weight_kg || '--'}</Text>
+              <Text style={styles.measurementLabel}>Cân nặng (kg)</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.measurementItem} onPress={handleEditMeasurements} activeOpacity={0.7}>
+              <View style={[styles.measurementIcon, { backgroundColor: '#4ECDC420' }]}>
+                <Ionicons name="resize-outline" size={24} color="#4ECDC4" />
+              </View>
+              <Text style={styles.measurementValue}>{user?.height_cm || '--'}</Text>
+              <Text style={styles.measurementLabel}>Chiều cao (cm)</Text>
+            </TouchableOpacity>
+            <View style={styles.measurementItem}>
+              <View style={[styles.measurementIcon, { backgroundColor: '#45B7D120' }]}>
+                <Ionicons name="stats-chart-outline" size={24} color="#45B7D1" />
+              </View>
+              <Text style={styles.measurementValue}>
+                {user?.weight_kg && user?.height_cm 
+                  ? ((user.weight_kg / Math.pow(user.height_cm / 100, 2)).toFixed(1))
+                  : '--'}
+              </Text>
+              <Text style={styles.measurementLabel}>BMI</Text>
+            </View>
+          </View>
+        </View>
       </ScrollView>
+
+      {/* Edit Measurements Modal */}
+      <Modal
+        visible={showEditModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowEditModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Cập nhật số đo</Text>
+              <TouchableOpacity onPress={() => setShowEditModal(false)}>
+                <Ionicons name="close" size={24} color={colors.text} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.modalBody}>
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Cân nặng (kg)</Text>
+                <TextInput
+                  style={styles.input}
+                  value={editWeight}
+                  onChangeText={setEditWeight}
+                  keyboardType="decimal-pad"
+                  placeholder="Nhập cân nặng"
+                  placeholderTextColor={colors.textSecondary}
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Chiều cao (cm)</Text>
+                <TextInput
+                  style={styles.input}
+                  value={editHeight}
+                  onChangeText={setEditHeight}
+                  keyboardType="decimal-pad"
+                  placeholder="Nhập chiều cao"
+                  placeholderTextColor={colors.textSecondary}
+                />
+              </View>
+
+              <TouchableOpacity
+                style={styles.saveButton}
+                onPress={handleSaveMeasurements}
+                disabled={saving}
+              >
+                {saving ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.saveButtonText}>Lưu thay đổi</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -458,6 +583,109 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textSecondary,
     textAlign: 'center',
+  },
+  // Measurements Card
+  measurementsCard: {
+    backgroundColor: '#fff',
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    marginTop: spacing.lg,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  editIconButton: {
+    marginLeft: 'auto',
+    padding: spacing.xs,
+  },
+  measurementsGrid: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  measurementItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  measurementIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: borderRadius.lg,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  measurementValue: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.text,
+    marginBottom: 4,
+  },
+  measurementLabel: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    textAlign: 'center',
+  },
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: borderRadius.xl,
+    width: '90%',
+    maxWidth: 400,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  modalBody: {
+    padding: spacing.lg,
+  },
+  inputGroup: {
+    marginBottom: spacing.md,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: spacing.xs,
+  },
+  input: {
+    backgroundColor: colors.background,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    fontSize: 16,
+    color: colors.text,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  saveButton: {
+    backgroundColor: colors.primary,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    marginTop: spacing.md,
+  },
+  saveButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
   },
   // Summary Card
   summaryCard: {

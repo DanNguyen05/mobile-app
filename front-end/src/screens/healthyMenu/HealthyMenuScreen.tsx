@@ -123,6 +123,62 @@ const RECIPES: Recipe[] = [
       'Thêm cà chua, nêm gia vị'
     ]
   },
+  {
+    id: 'breakfast-4',
+    name: 'Bánh protein chuối',
+    image: 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=400',
+    category: 'Breakfast',
+    calories: 340,
+    protein: 20,
+    carbs: 42,
+    fat: 10,
+    time: 25,
+    difficulty: 'Medium',
+    rating: 4.8,
+    reviews: 267,
+    ingredients: [
+      '2 quả chuối chín',
+      '2 quả trứng',
+      '1 scoop protein',
+      '50g bột yến mạch',
+      'Bột nở',
+      'Quế'
+    ],
+    instructions: [
+      'Nghiền chuối và trộn với trứng',
+      'Thêm protein, yến mạch, bột nở',
+      'Đổ vào khuôn bánh',
+      'Nướng 180°C trong 20 phút'
+    ]
+  },
+  {
+    id: 'breakfast-5',
+    name: 'Trứng scrambled với rau củ',
+    image: 'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400',
+    category: 'Breakfast',
+    calories: 295,
+    protein: 24,
+    carbs: 18,
+    fat: 14,
+    time: 12,
+    difficulty: 'Easy',
+    rating: 4.6,
+    reviews: 198,
+    ingredients: [
+      '3 quả trứng',
+      'Cà chua',
+      'Hành tây',
+      'Ớt chuông',
+      'Rau bina',
+      'Phô mai'
+    ],
+    instructions: [
+      'Đánh trứng đều',
+      'Xào rau củ',
+      'Thêm trứng và khuấy đều',
+      'Rắc phô mai trước khi tắt bếp'
+    ]
+  },
   // LUNCH
   {
     id: 'lunch-1',
@@ -205,6 +261,90 @@ const RECIPES: Recipe[] = [
       'Trộn đều với sốt'
     ]
   },
+  {
+    id: 'lunch-4',
+    name: 'Pasta nguyên cám với tôm',
+    image: 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400',
+    category: 'Lunch',
+    calories: 580,
+    protein: 35,
+    carbs: 62,
+    fat: 18,
+    time: 25,
+    difficulty: 'Medium',
+    rating: 4.7,
+    reviews: 412,
+    ingredients: [
+      '100g pasta nguyên cám',
+      '150g tôm',
+      'Cà chua bi',
+      'Tỏi',
+      'Húng quế',
+      'Dầu ô liu'
+    ],
+    instructions: [
+      'Luộc pasta theo hướng dẫn',
+      'Xào tỏi thơm',
+      'Thêm tôm và cà chua',
+      'Trộn pasta với hỗn hợp, rắc húng quế'
+    ]
+  },
+  {
+    id: 'lunch-5',
+    name: 'Cơm gạo lứt với thịt gà xào',
+    image: 'https://images.unsplash.com/photo-1512058564366-18510be2db19?w=400',
+    category: 'Lunch',
+    calories: 640,
+    protein: 42,
+    carbs: 68,
+    fat: 16,
+    time: 35,
+    difficulty: 'Easy',
+    rating: 4.5,
+    reviews: 356,
+    ingredients: [
+      '100g gạo lứt',
+      '150g ức gà',
+      'Rau củ xào',
+      'Nấm',
+      'Nước tương',
+      'Gừng'
+    ],
+    instructions: [
+      'Nấu cơm gạo lứt',
+      'Ướp gà với nước tương và gừng',
+      'Xào gà với rau củ và nấm',
+      'Ăn kèm với cơm'
+    ]
+  },
+  {
+    id: 'lunch-6',
+    name: 'Phở gà healthy',
+    image: 'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?w=400',
+    category: 'Lunch',
+    calories: 480,
+    protein: 38,
+    carbs: 55,
+    fat: 10,
+    time: 45,
+    difficulty: 'Medium',
+    rating: 4.9,
+    reviews: 678,
+    ingredients: [
+      'Xương gà',
+      'Bánh phở',
+      'Ức gà',
+      'Rau thơm',
+      'Hành tây',
+      'Gia vị'
+    ],
+    instructions: [
+      'Ninh nước dùng từ xương gà',
+      'Luộc bánh phở',
+      'Luộc ức gà',
+      'Bày bánh phở, gà và chan nước dùng'
+    ]
+  },
   // SNACK
   {
     id: 'snack-1',
@@ -253,6 +393,88 @@ const RECIPES: Recipe[] = [
     instructions: [
       'Trộn tất cả nguyên liệu',
       'Chia thành túi nhỏ để mang theo'
+    ]
+  },
+  {
+    id: 'snack-3',
+    name: 'Energy balls chocolate',
+    image: 'https://images.unsplash.com/photo-1569288063643-5d29ad64df09?w=400',
+    category: 'Snack',
+    calories: 240,
+    protein: 10,
+    carbs: 28,
+    fat: 10,
+    time: 15,
+    difficulty: 'Easy',
+    rating: 4.8,
+    reviews: 321,
+    ingredients: [
+      '100g chà là',
+      '50g hạnh nhân',
+      '2 tbsp bột ca cao',
+      '2 tbsp mật ong',
+      'Bột yến mạch',
+      'Dừa nạo'
+    ],
+    instructions: [
+      'Xay nhuyễn chà là và hạnh nhân',
+      'Trộn với ca cao, mật ong, yến mạch',
+      'Vo thành từng viên nhỏ',
+      'Lăn qua dừa nạo và bảo quản lạnh'
+    ]
+  },
+  {
+    id: 'snack-4',
+    name: 'Khoai lang nướng',
+    image: 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=400',
+    category: 'Snack',
+    calories: 180,
+    protein: 4,
+    carbs: 38,
+    fat: 2,
+    time: 40,
+    difficulty: 'Easy',
+    rating: 4.6,
+    reviews: 245,
+    ingredients: [
+      '1 củ khoai lang',
+      'Dầu ô liu',
+      'Muối',
+      'Quế'
+    ],
+    instructions: [
+      'Rửa sạch khoai lang',
+      'Bọc giấy bạc',
+      'Nướng 200°C trong 35-40 phút',
+      'Rắc quế khi ăn'
+    ]
+  },
+  {
+    id: 'snack-5',
+    name: 'Hummus với rau củ sống',
+    image: 'https://images.unsplash.com/photo-1609501676725-7186f017a4b7?w=400',
+    category: 'Snack',
+    calories: 210,
+    protein: 8,
+    carbs: 24,
+    fat: 9,
+    time: 10,
+    difficulty: 'Easy',
+    rating: 4.7,
+    reviews: 189,
+    ingredients: [
+      '200g đậu chickpea',
+      'Tahini',
+      'Chanh',
+      'Tỏi',
+      'Cà rốt',
+      'Dưa chuột'
+    ],
+    instructions: [
+      'Xay nhuyễn đậu chickpea với tahini, chanh, tỏi',
+      'Thêm gia vị',
+      'Cắt rau củ thành que',
+      'Chấm với hummus'
     ]
   },
   // DINNER
@@ -337,6 +559,118 @@ const RECIPES: Recipe[] = [
       'Nướng 30-35 phút ở 200°C'
     ]
   },
+  {
+    id: 'dinner-4',
+    name: 'Canh rau củ với đậu',
+    image: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400',
+    category: 'Dinner',
+    calories: 380,
+    protein: 18,
+    carbs: 52,
+    fat: 10,
+    time: 30,
+    difficulty: 'Easy',
+    rating: 4.5,
+    reviews: 278,
+    ingredients: [
+      'Đậu tổng hợp',
+      'Cà rốt',
+      'Cần tây',
+      'Hành tây',
+      'Cà chua',
+      'Nước dùng'
+    ],
+    instructions: [
+      'Ngâm đậu qua đêm',
+      'Xào hành tây thơm',
+      'Thêm rau củ và đậu',
+      'Nấu nhỏ lửa 25-30 phút'
+    ]
+  },
+  {
+    id: 'dinner-5',
+    name: 'Cá nướng sốt chanh dây',
+    image: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400',
+    category: 'Dinner',
+    calories: 540,
+    protein: 46,
+    carbs: 35,
+    fat: 20,
+    time: 30,
+    difficulty: 'Medium',
+    rating: 4.9,
+    reviews: 534,
+    ingredients: [
+      '200g phi lê cá',
+      'Chanh dây',
+      'Mật ong',
+      'Tỏi',
+      'Rau củ nướng',
+      'Thảo mộc'
+    ],
+    instructions: [
+      'Ướp cá với tỏi và thảo mộc',
+      'Làm sốt chanh dây với mật ong',
+      'Nướng cá và rau củ',
+      'Rưới sốt lên cá khi ăn'
+    ]
+  },
+  {
+    id: 'dinner-6',
+    name: 'Thịt gà sốt nấm',
+    image: 'https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=400',
+    category: 'Dinner',
+    calories: 610,
+    protein: 48,
+    carbs: 40,
+    fat: 24,
+    time: 35,
+    difficulty: 'Medium',
+    rating: 4.8,
+    reviews: 467,
+    ingredients: [
+      '200g ức gà',
+      'Nấm tổng hợp',
+      'Kem tươi',
+      'Tỏi',
+      'Hành tây',
+      'Thảo mộc'
+    ],
+    instructions: [
+      'Áp chảo gà đến vàng',
+      'Xào tỏi và hành tây',
+      'Thêm nấm và xào chín',
+      'Cho kem tươi và thảo mộc, nêm gia vị'
+    ]
+  },
+  {
+    id: 'dinner-7',
+    name: 'Bún chả chay',
+    image: 'https://images.unsplash.com/photo-1559847844-5315695dadae?w=400',
+    category: 'Dinner',
+    calories: 490,
+    protein: 22,
+    carbs: 68,
+    fat: 14,
+    time: 40,
+    difficulty: 'Medium',
+    rating: 4.7,
+    reviews: 389,
+    ingredients: [
+      'Bún tươi',
+      'Đậu hũ',
+      'Nấm',
+      'Rau sống',
+      'Nước mắm chay',
+      'Gia vị'
+    ],
+    instructions: [
+      'Ướp đậu hũ với gia vị',
+      'Nướng đậu hũ và nấm',
+      'Luộc bún',
+      'Bày bún, rau sống, đậu hũ và chan nước mắm'
+    ]
+  },
 ];
 
 export default function HealthyMenuScreen() {
@@ -406,37 +740,32 @@ export default function HealthyMenuScreen() {
         <View style={styles.headerRight} />
       </View>
 
-      {/* Subtitle */}
-      <View style={styles.subtitleContainer}>
-        <Text style={styles.subtitle}>Thực đơn lành mạnh</Text>
-        <Text style={styles.recipeCount}>{filteredRecipes.length} công thức</Text>
-      </View>
-
       {/* Categories */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.categoriesContainer}
-        contentContainerStyle={styles.categoriesContent}
-      >
-        {CATEGORIES.map(category => (
-          <TouchableOpacity
-            key={category.key}
-            style={[
-              styles.categoryButton,
-              selectedCategory === category.key && styles.categoryButtonActive
-            ]}
-            onPress={() => setSelectedCategory(category.key)}
-          >
-            <Text style={[
-              styles.categoryText,
-              selectedCategory === category.key && styles.categoryTextActive
-            ]}>
-              {category.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+      <View style={styles.categoriesWrapper}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.categoriesContent}
+        >
+          {CATEGORIES.map(category => (
+            <TouchableOpacity
+              key={category.key}
+              style={[
+                styles.categoryButton,
+                selectedCategory === category.key && styles.categoryButtonActive
+              ]}
+              onPress={() => setSelectedCategory(category.key)}
+            >
+              <Text style={[
+                styles.categoryText,
+                selectedCategory === category.key && styles.categoryTextActive
+              ]}>
+                {category.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
 
       {/* Recipes Grid */}
       <FlatList
@@ -556,36 +885,22 @@ const styles = StyleSheet.create({
   headerRight: {
     width: 40,
   },
-  subtitleContainer: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
+  categoriesWrapper: {
+    paddingTop: spacing.md,
     backgroundColor: colors.background,
-  },
-  subtitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  recipeCount: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginTop: 4,
-  },
-  categoriesContainer: {
-    flexGrow: 0,
+    paddingBottom: spacing.md,
   },
   categoriesContent: {
     paddingHorizontal: spacing.md,
-    paddingBottom: spacing.md,
-    gap: spacing.sm,
   },
   categoryButton: {
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.sm,
     borderRadius: borderRadius.full,
     backgroundColor: '#fff',
     borderWidth: 1.5,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
+    marginRight: spacing.sm,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
@@ -609,36 +924,37 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   recipesGrid: {
-    padding: spacing.md,
+    padding: spacing.sm,
     paddingBottom: 100,
   },
   recipeCard: {
     flex: 1,
     margin: spacing.xs,
+    maxWidth: '48%',
     backgroundColor: '#fff',
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.xl,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 3,
   },
   recipeImage: {
     width: '100%',
-    height: 160,
+    height: 140,
     backgroundColor: '#f0f0f0',
   },
   recipeInfo: {
-    padding: spacing.md,
+    padding: spacing.sm,
   },
   recipeName: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
     color: colors.text,
     marginBottom: spacing.sm,
-    minHeight: 40,
-    lineHeight: 20,
+    minHeight: 38,
+    lineHeight: 19,
   },
   recipeStats: {
     flexDirection: 'row',
