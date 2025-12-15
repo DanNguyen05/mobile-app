@@ -82,12 +82,12 @@ All numbers must be integers. No markdown, no text, ONLY JSON.`;
       
       // Try to extract partial food name
       const nameMatch = content.match(/"food_name"\s*:\s*"([^"]*)/);
-      const partialName = nameMatch ? nameMatch[1] : 'Phở bò';
+      const partialName = nameMatch ? nameMatch[1] : 'PhÃ¡Â»Å¸ bÃƒÂ²';
       
       // Auto-complete JSON with Vietnamese food defaults
       content = `{
   "food_name": "${partialName}",
-  "portion_size": "1 tô (500g)",
+  "portion_size": "1 tÃƒÂ´ (500g)",
   "calories": 450,
   "protein": 28,
   "carbs": 60,
@@ -270,12 +270,12 @@ All numbers must be integers. No markdown, no text, ONLY JSON.`;
       
       // Try to extract partial food name
       const nameMatch = content.match(/"food_name"\s*:\s*"([^"]*)/);
-      const partialName = nameMatch ? nameMatch[1] : 'Món ăn không xác định';
+      const partialName = nameMatch ? nameMatch[1] : 'MÃƒÂ³n Ã„Æ’n khÃƒÂ´ng xÃƒÂ¡c Ã„â€˜Ã¡Â»â€¹nh';
       
       // Auto-complete JSON with Vietnamese food defaults
       content = `{
   "food_name": "${partialName}",
-  "portion_size": "1 tô (500g)",
+  "portion_size": "1 tÃƒÂ´ (500g)",
   "calories": 450,
   "protein": 28,
   "carbs": 60,
@@ -293,9 +293,9 @@ All numbers must be integers. No markdown, no text, ONLY JSON.`;
       // Fallback: return default values
       return res.json({
         success: false,
-        error: 'Không thể nhận diện đồ ăn từ ảnh',
+        error: 'KhÃƒÂ´ng thÃ¡Â»Æ’ nhÃ¡ÂºÂ­n diÃ¡Â»â€¡n Ã„â€˜Ã¡Â»â€œ Ã„Æ’n tÃ¡Â»Â« Ã¡ÂºÂ£nh',
         data: {
-          foodName: 'Không xác định',
+          foodName: 'KhÃƒÂ´ng xÃƒÂ¡c Ã„â€˜Ã¡Â»â€¹nh',
           amount: '100g',
           calories: 0,
           protein: 0,
@@ -457,12 +457,12 @@ Calories consumed today: ${dailyIntake} kcal (${caloriePercent}% of TDEE)
 User request: "${userQuery || 'Generate today\'s workout plan'}"
 
 GUIDELINES
-- <30% TDEE → light (yoga, walking)
-- 30-70% → moderate
-- >70% → intense or active recovery
-- Select 1–3 workouts from the list below only
-- Total estimated burn: 250–600 kcal
-- Order: Strength/Cardio FIRST → Yoga/Recovery LAST
+- <30% TDEE Ã¢â€ â€™ light (yoga, walking)
+- 30-70% Ã¢â€ â€™ moderate
+- >70% Ã¢â€ â€™ intense or active recovery
+- Select 1Ã¢â‚¬â€œ3 workouts from the list below only
+- Total estimated burn: 250Ã¢â‚¬â€œ600 kcal
+- Order: Strength/Cardio FIRST Ã¢â€ â€™ Yoga/Recovery LAST
 
 AVAILABLE WORKOUTS (must match exactly):
 ${AVAILABLE_PLANS.map((p, i) => `${i + 1}. ${p}`).join('\n')}
@@ -694,31 +694,111 @@ export const getAIContext = async (req, res) => {
 
 /**
  * Generate 7-day meal plan using Gemini AI
+ * Falls back to a local template if AI fails so the app doesn't break.
  */
 export const generateMealPlan = async (req, res) => {
-  try {
-    const userId = req.user.userId;
-    const { allergies, preferences } = req.body;
+  const userId = req.user?.id;
+  const { allergies = '', preferences = '' } = req.body || {};
 
-    // Get user data
+  if (!userId) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  try {
     const user = await prisma.user.findUnique({
-      where: { user_id: userId },
+      where: { id: userId },
     });
 
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Calculate nutritional targets
-    const bmr = calculateBMR(user);
-    const tdee = calculateTDEE(user);
-    const targetCalories = user.goal === 'weight_loss' ? tdee - 500 
-                        : user.goal === 'muscle_gain' ? tdee + 300 
-                        : tdee;
+    const weight = Number(user.weightKg) || 65;
+    const height = Number(user.heightCm) || 170;
+    const age = Number(user.age) || 30;
+    const gender = user.gender || 'male';
+    const activityLevel = user.activityLevel || 'moderately_active';
+
+    const bmr = calculateBMR({ weight, height, age, gender });
+    const tdee = calculateTDEE(bmr, activityLevel);
+    const safeTDEE = Number.isFinite(tdee) && tdee > 0 ? tdee : 2000;
+    const targetCalories =
+      user.goal === 'weight_loss'
+        ? safeTDEE - 500
+        : user.goal === 'muscle_gain'
+          ? safeTDEE + 300
+          : safeTDEE;
+    const roundedTarget = Math.max(1200, Math.round(targetCalories));
+
+    const buildFallbackPlan = () => {
+      const fallbackTemplates = [
+        {
+          day: 'Thứ Hai',
+          breakfast: { name: 'Pancake protein dâu tây', calories: 540, protein: 30 },
+          lunch: { name: 'Gà nướng quinoa', calories: 680, protein: 48 },
+          snack: { name: 'Sữa chua Hy Lạp & hạnh nhân', calories: 220, protein: 18 },
+          dinner: { name: 'Cá hồi nướng khoai lang', calories: 650, protein: 45 },
+        },
+        {
+          day: 'Thứ Ba',
+          breakfast: { name: 'Bánh mì bơ trứng', calories: 520, protein: 24 },
+          lunch: { name: 'Gà tây cuốn rau', calories: 580, protein: 42 },
+          snack: { name: 'Sinh tố protein chuối', calories: 280, protein: 30 },
+          dinner: { name: 'Bò xào bông cải xanh', calories: 670, protein: 52 },
+        },
+        {
+          day: 'Thứ Tư',
+          breakfast: { name: 'Yến mạch qua đêm', calories: 490, protein: 20 },
+          lunch: { name: 'Salad cá ngừ đậu gà', calories: 640, protein: 44 },
+          snack: { name: 'Phô mai cottage & dứa', calories: 190, protein: 22 },
+          dinner: { name: 'Gà nướng rau củ', calories: 660, protein: 50 },
+        },
+        {
+          day: 'Thứ Năm',
+          breakfast: { name: 'Trứng trộn rau bina', calories: 510, protein: 28 },
+          lunch: { name: 'Tôm mì zucchini', calories: 560, protein: 46 },
+          snack: { name: 'Táo & bơ đậu phộng', calories: 240, protein: 8 },
+          dinner: { name: 'Đậu phụ xào rau', calories: 610, protein: 36 },
+        },
+        {
+          day: 'Thứ Sáu',
+          breakfast: { name: 'Sữa chua parfait', calories: 530, protein: 32 },
+          lunch: { name: 'Gà Buddha bowl', calories: 700, protein: 50 },
+          snack: { name: 'Cà rốt & hummus', calories: 180, protein: 6 },
+          dinner: { name: 'Cá tuyết nướng măng tây', calories: 600, protein: 48 },
+        },
+        {
+          day: 'Thứ Bảy',
+          breakfast: { name: 'Smoothie bowl xanh', calories: 500, protein: 28 },
+          lunch: { name: 'Súp đậu lăng & bánh mì', calories: 620, protein: 30 },
+          snack: { name: 'Trứng luộc & dưa chuột', calories: 200, protein: 16 },
+          dinner: { name: 'Viên gà tây mì zoodle', calories: 650, protein: 52 },
+        },
+        {
+          day: 'Chủ Nhật',
+          breakfast: { name: 'Chia pudding xoài', calories: 480, protein: 18 },
+          lunch: { name: 'Cá hồi poke bowl', calories: 710, protein: 46 },
+          snack: { name: 'Dâu tây & hạt óc chó', calories: 230, protein: 5 },
+          dinner: { name: 'Salad gà nướng', calories: 670, protein: 54 },
+        },
+      ];
+
+      const start = new Date();
+      const dayOfWeek = start.getDay() === 0 ? 7 : start.getDay();
+      start.setDate(start.getDate() - (dayOfWeek - 1));
+
+      return fallbackTemplates.map((template, i) => {
+        const date = new Date(start);
+        date.setDate(start.getDate() + i);
+        const dayLabel = `${date.getDate()}/${date.getMonth() + 1}`;
+
+        return { ...template, date: dayLabel };
+      });
+    };
 
     const prompt = `Create a 7-day healthy meal plan in Vietnamese for a person with:
 - Goal: ${user.goal || 'maintenance'}
-- Daily calorie target: ${Math.round(targetCalories)} kcal
+- Daily calorie target: ${roundedTarget} kcal
 - Allergies: ${allergies || 'None'}
 - Preferences: ${preferences || 'Balanced diet'}
 
@@ -726,64 +806,74 @@ Return ONLY valid JSON array with 7 days, each day has breakfast, lunch, snack, 
 [
   {
     "day": "Thứ Hai",
-    "date": "16 Th12",
-    "breakfast": { "name": "Món ăn", "calories": 400, "protein": 20 },
-    "lunch": { "name": "Món ăn", "calories": 500, "protein": 30 },
-    "snack": { "name": "Món ăn", "calories": 200, "protein": 10 },
-    "dinner": { "name": "Món ăn", "calories": 450, "protein": 25 }
+    "date": "16/12",
+    "breakfast": { "name": "Pancake protein dâu tây", "calories": 540, "protein": 30 },
+    "lunch": { "name": "Gà nướng quinoa", "calories": 680, "protein": 48 },
+    "snack": { "name": "Sữa chua Hy Lạp & hạnh nhân", "calories": 220, "protein": 18 },
+    "dinner": { "name": "Cá hồi nướng khoai lang", "calories": 650, "protein": 45 }
   }
 ]
-
 Requirements:
 - All Vietnamese dish names
 - Realistic calorie distribution
 - High protein meals
 - Avoid allergies: ${allergies || 'none'}
 - Match preferences: ${preferences || 'balanced'}
-- Total daily calories around ${Math.round(targetCalories)} kcal
+- Total daily calories around ${roundedTarget} kcal
 - No markdown, ONLY JSON array`;
 
-    const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.7,
-          topK: 40,
-          topP: 0.95,
-          maxOutputTokens: 2048,
-        },
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Gemini API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-    if (!text) {
-      throw new Error('No response from Gemini');
-    }
-
-    // Extract JSON from response
     let mealPlan;
+    let source = 'ai';
+
     try {
-      const jsonMatch = text.match(/\[[\s\S]*\]/);
+      const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.7,
+            topK: 40,
+            topP: 0.95,
+            maxOutputTokens: 2048,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Gemini API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      let text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      text = text.replace(/```json/gi, '').replace(/```/g, '').trim();
+
+      const jsonMatch = text.match(/\[[\s\S]*\]/) || text.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
         throw new Error('No JSON array found');
       }
-      mealPlan = JSON.parse(jsonMatch[0]);
-    } catch (parseError) {
-      console.error('JSON parse error:', parseError);
-      return res.status(500).json({ error: 'Failed to parse AI response' });
+
+      const parsed = JSON.parse(jsonMatch[0]);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        mealPlan = parsed;
+      } else if (Array.isArray(parsed?.days) && parsed.days.length > 0) {
+        mealPlan = parsed.days;
+      } else {
+        throw new Error('AI returned empty plan');
+      }
+    } catch (aiError) {
+      console.error('AI meal plan error, using fallback:', aiError);
+      mealPlan = buildFallbackPlan();
+      source = 'fallback';
     }
 
-    res.json({ mealPlan, targetCalories: Math.round(targetCalories) });
+    return res.json({ mealPlan, targetCalories: roundedTarget, source });
   } catch (error) {
     console.error('Generate meal plan error:', error);
-    res.status(500).json({ error: 'Failed to generate meal plan' });
+    res.json({
+      mealPlan: buildFallbackPlan(),
+      targetCalories: 2000,
+      source: 'fallback',
+    });
   }
 };
