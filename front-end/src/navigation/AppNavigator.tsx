@@ -129,8 +129,8 @@ const MainTabNavigator = () => {
         },
       })}
     >
-      <Tab.Screen name="Dashboard" component={DashboardScreen} options={{ title: 'Trang chủ' }} />
-      <Tab.Screen name="FoodLog" component={FoodDiaryScreen} options={{ title: 'Nhật ký' }} />
+      <Tab.Screen name="Dashboard" component={DashboardScreen} options={{ title: 'Trang chủ', headerShown: false }} />
+      <Tab.Screen name="FoodLog" component={FoodDiaryScreen} options={{ title: 'Nhật ký', headerShown: false }} />
       <Tab.Screen 
         name="Camera" 
         component={FoodRecognitionScreen} 

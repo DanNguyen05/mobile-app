@@ -113,7 +113,7 @@ interface MealItem {
   fat: number;
   time: string;
   status: 'Breakfast' | 'Lunch' | 'Snack' | 'Dinner';
-  imageUrl?: string;
+  image?: string;
 }
 
 type RootStackParamList = {
@@ -164,7 +164,7 @@ export default function DashboardScreen() {
         fat: Math.round(log.fat_g),
         time: format(new Date(log.eaten_at), 'h:mm a'),
         status: log.meal_type as MealItem['status'],
-        imageUrl: log.imageUrl,
+        image: log.image_url ?? (log as any).imageUrl,
       }));
 
       mappedMeals.sort((a, b) => a.time.localeCompare(b.time));
@@ -276,6 +276,11 @@ export default function DashboardScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Tổng quan</Text>
+      </View>
+      
       {/* Colorful Background Gradient */}
       <LinearGradient
         colors={['#E0F2F1', '#F1F8E9', '#FFF3E0']}

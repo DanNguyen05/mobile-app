@@ -66,9 +66,9 @@ export default function SettingsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
       <View style={styles.header}>
-        <Text style={styles.title}>Cài đặt</Text>
+        <Text style={styles.headerTitle}>Cài đặt</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -263,13 +263,17 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   header: {
-    padding: spacing.md,
-    paddingBottom: 0,
+    backgroundColor: colors.primary,
+    paddingTop: 50,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  title: {
-    fontSize: 28,
+  headerTitle: {
+    fontSize: 20,
     fontWeight: '700',
-    color: colors.text,
+    color: '#fff',
   },
   scrollContent: {
     padding: spacing.md,

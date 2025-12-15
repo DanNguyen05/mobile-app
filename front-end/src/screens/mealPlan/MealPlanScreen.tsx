@@ -11,11 +11,9 @@ import {
   ActivityIndicator,
   Alert,
   StatusBar,
-  Platform,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import { format, addDays, startOfWeek } from 'date-fns';
 import { vi } from 'date-fns/locale';
 
@@ -103,7 +101,6 @@ const HEALTHY_PLAN: DayPlan[] = [
 
 export default function MealPlanScreen() {
   const navigation = useNavigation();
-  const insets = useSafeAreaInsets();
   const [plan, setPlan] = useState<DayPlan[]>(HEALTHY_PLAN);
   const [selectedDay, setSelectedDay] = useState(0);
   const [showForm, setShowForm] = useState(false);
@@ -129,15 +126,30 @@ export default function MealPlanScreen() {
   const getMealIcon = (type: string) => {
     switch (type) {
       case 'breakfast':
-        return 'sunny';
+        return 'sunny-outline';
       case 'lunch':
-        return 'restaurant';
+        return 'restaurant-outline';
       case 'snack':
-        return 'cafe';
+        return 'cafe-outline';
       case 'dinner':
-        return 'moon';
+        return 'moon-outline';
       default:
-        return 'nutrition';
+        return 'nutrition-outline';
+    }
+  };
+
+  const getMealTitle = (type: string) => {
+    switch (type) {
+      case 'breakfast':
+        return 'Sáng';
+      case 'lunch':
+        return 'Trưa';
+      case 'snack':
+        return 'Phụ';
+      case 'dinner':
+        return 'Tối';
+      default:
+        return 'Bữa ăn';
     }
   };
 
@@ -168,8 +180,8 @@ export default function MealPlanScreen() {
       return (
         <View style={[styles.mealCard, { backgroundColor: getMealColor(type) }]}>
           <View style={styles.mealHeader}>
-            <Ionicons name={getMealIcon(type) as any} size={20} color={colors.textSecondary} />
-            <Text style={styles.mealType}>{type.charAt(0).toUpperCase() + type.slice(1)}</Text>
+            <Ionicons name={getMealIcon(type) as any} size={22} color={colors.textSecondary} />
+            <Text style={styles.mealType}>{getMealTitle(type)}</Text>
           </View>
           <Text style={styles.emptyMeal}>Chưa có bữa ăn</Text>
         </View>
@@ -179,17 +191,17 @@ export default function MealPlanScreen() {
     return (
       <View style={[styles.mealCard, { backgroundColor: getMealColor(type) }]}>
         <View style={styles.mealHeader}>
-          <Ionicons name={getMealIcon(type) as any} size={20} color={colors.primary} />
-          <Text style={styles.mealType}>{type.charAt(0).toUpperCase() + type.slice(1)}</Text>
+          <Ionicons name={getMealIcon(type) as any} size={22} color={colors.primary} />
+          <Text style={styles.mealType}>{getMealTitle(type)}</Text>
         </View>
         <Text style={styles.mealName}>{meal.name}</Text>
         <View style={styles.mealStats}>
-          <View style={styles.statChip}>
-            <Ionicons name="flame" size={14} color={colors.warning} />
+          <View style={styles.mealStatItem}>
+            <Ionicons name="flame-outline" size={16} color={colors.warning} />
             <Text style={styles.statText}>{meal.calories} kcal</Text>
           </View>
-          <View style={styles.statChip}>
-            <Ionicons name="fitness" size={14} color={colors.protein} />
+          <View style={styles.mealStatItem}>
+            <Ionicons name="fitness-outline" size={16} color={colors.protein} />
             <Text style={styles.statText}>{meal.protein}g protein</Text>
           </View>
         </View>
@@ -213,72 +225,72 @@ export default function MealPlanScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#10b981" />
-      
-      {/* Custom Header */}
-      <View style={[styles.customHeader, { paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight || 0 : insets.top }]}>
+      <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
+      {/* Header */}
+      <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>Kế hoạch 7 ngày</Text>
-          <Text style={styles.headerSubtitle}>Bữa ăn lành mạnh</Text>
-        </View>
-        <TouchableOpacity style={styles.headerGenerateButton} onPress={() => setShowForm(true)}>
-          <Ionicons name="sparkles" size={20} color="#fff" />
-        </TouchableOpacity>
+        <Text style={styles.title}>Kế hoạch 7 ngày</Text>
+        <View style={styles.headerSpacer} />
       </View>
 
-      {/* Week Tabs */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.weekTabs}
-        contentContainerStyle={styles.weekTabsContent}
-      >
-        {plan.map((day, index) => (
-          <TouchableOpacity
-            key={index}
-            style={[styles.dayTab, selectedDay === index && styles.dayTabActive]}
-            onPress={() => setSelectedDay(index)}
+      <ScrollView style={styles.content}>
+        {/* Week Tabs */}
+        <View style={styles.weekTabsContainer}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.weekTabsContent}
           >
-            <Text style={[styles.dayName, selectedDay === index && styles.dayNameActive]}>
-              {day.day.substring(0, 3)}
-            </Text>
-            <Text style={[styles.dayDate, selectedDay === index && styles.dayDateActive]}>
-              {day.date}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+            {plan.map((day, index) => (
+              <TouchableOpacity
+                key={index}
+                style={[styles.dayTab, selectedDay === index && styles.dayTabActive]}
+                onPress={() => setSelectedDay(index)}
+              >
+                <Text style={[styles.dayName, selectedDay === index && styles.dayNameActive]}>
+                  {day.day.substring(0, 3)}
+                </Text>
+                <Text style={[styles.dayDate, selectedDay === index && styles.dayDateActive]}>
+                  {day.date.split(' ')[0]}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
 
-      {/* Daily Summary */}
-      <View style={styles.summaryCard}>
-        <View style={styles.summaryItem}>
-          <Ionicons name="flame" size={24} color={colors.warning} />
-          <Text style={styles.summaryValue}>{totalCalories}</Text>
-          <Text style={styles.summaryLabel}>Tổng calo</Text>
+        {/* Daily Summary */}
+        <View style={styles.summaryCard}>
+          <View style={styles.summaryRow}>
+            <View style={styles.summaryItem}>
+              <View style={styles.summaryIconContainer}>
+                <Ionicons name="flame" size={20} color="#fff" />
+              </View>
+              <View>
+                <Text style={styles.summaryValue}>{totalCalories}</Text>
+                <Text style={styles.summaryLabel}>Calo</Text>
+              </View>
+            </View>
+            <View style={styles.summaryItem}>
+              <View style={[styles.summaryIconContainer, { backgroundColor: colors.protein }]}>
+                <Ionicons name="fitness" size={20} color="#fff" />
+              </View>
+              <View>
+                <Text style={styles.summaryValue}>{totalProtein}g</Text>
+                <Text style={styles.summaryLabel}>Protein</Text>
+              </View>
+            </View>
+          </View>
         </View>
-        <View style={styles.summaryDivider} />
-        <View style={styles.summaryItem}>
-          <Ionicons name="fitness" size={24} color={colors.protein} />
-          <Text style={styles.summaryValue}>{totalProtein}g</Text>
-          <Text style={styles.summaryLabel}>Tổng protein</Text>
-        </View>
-        <View style={styles.summaryDivider} />
-        <View style={styles.summaryItem}>
-          <Ionicons name="restaurant" size={24} color={colors.primary} />
-          <Text style={styles.summaryValue}>4</Text>
-          <Text style={styles.summaryLabel}>Bữa ăn</Text>
-        </View>
-      </View>
 
-      {/* Meals */}
-      <ScrollView style={styles.mealsContainer} contentContainerStyle={styles.mealsContent}>
-        {renderMealCard(plan[selectedDay]?.breakfast, 'breakfast')}
-        {renderMealCard(plan[selectedDay]?.lunch, 'lunch')}
-        {renderMealCard(plan[selectedDay]?.snack, 'snack')}
-        {renderMealCard(plan[selectedDay]?.dinner, 'dinner')}
+        {/* Meals */}
+        <View style={styles.mealsContainer}>
+          {renderMealCard(plan[selectedDay]?.breakfast, 'breakfast')}
+          {renderMealCard(plan[selectedDay]?.lunch, 'lunch')}
+          {renderMealCard(plan[selectedDay]?.snack, 'snack')}
+          {renderMealCard(plan[selectedDay]?.dinner, 'dinner')}
+        </View>
       </ScrollView>
 
       {/* Generate Plan Modal */}
@@ -345,154 +357,133 @@ export default function MealPlanScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F7FA',
-  },
-  customHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-    backgroundColor: '#10b981',
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-  },
-  headerCenter: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#fff',
-  },
-  headerSubtitle: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.8)',
-    marginTop: 2,
-  },
-  headerGenerateButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  generateButton: {
-    backgroundColor: '#10b981',
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.md,
+    backgroundColor: colors.background,
   },
   header: {
+    backgroundColor: colors.primary,
+    paddingTop: 50,
+    paddingBottom: spacing.md,
+    paddingHorizontal: spacing.md,
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    padding: spacing.md,
-    paddingBottom: spacing.sm,
+    justifyContent: 'space-between',
+  },
+  backButton: {
+    padding: spacing.sm,
   },
   title: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '700',
-    color: colors.text,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginTop: 4,
-  },
-  generateButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
     color: '#fff',
+    letterSpacing: 0.3,
+    flex: 1,
+    textAlign: 'center',
+    marginRight: -40,
   },
-  weekTabs: {
-    flexGrow: 0,
+  headerSpacer: {
+    width: 40,
+  },
+  content: {
+    flex: 1,
+  },
+  weekTabsContainer: {
+    paddingVertical: spacing.md,
+    backgroundColor: colors.background,
   },
   weekTabsContent: {
     paddingHorizontal: spacing.md,
-    paddingBottom: spacing.md,
     gap: spacing.sm,
   },
   dayTab: {
     alignItems: 'center',
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
+    justifyContent: 'center',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: borderRadius.lg,
+    backgroundColor: '#fff',
     marginRight: spacing.sm,
-    minWidth: 70,
+    minWidth: 65,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   dayTabActive: {
     backgroundColor: colors.primary,
-    borderColor: colors.primary,
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
   },
   dayName: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
     color: colors.text,
   },
   dayNameActive: {
     color: '#fff',
   },
   dayDate: {
-    fontSize: 12,
+    fontSize: 13,
+    fontWeight: '600',
     color: colors.textSecondary,
-    marginTop: 2,
-  },
-  dayDateActive: {
-    color: 'rgba(255,255,255,0.9)',
-  },
-  summaryCard: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    backgroundColor: colors.surface,
-    marginHorizontal: spacing.md,
-    marginBottom: spacing.md,
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  summaryItem: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  summaryValue: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.text,
     marginTop: 4,
   },
+  dayDateActive: {
+    color: 'rgba(255,255,255,0.95)',
+  },
+  summaryCard: {
+    backgroundColor: '#fff',
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.md,
+    padding: spacing.lg,
+    borderRadius: borderRadius.lg,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  summaryItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  summaryIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.warning,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  summaryValue: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.text,
+  },
   summaryLabel: {
-    fontSize: 12,
+    fontSize: 13,
     color: colors.textSecondary,
     marginTop: 2,
   },
-  summaryDivider: {
-    width: 1,
-    backgroundColor: colors.border,
-  },
   mealsContainer: {
-    flex: 1,
-  },
-  mealsContent: {
-    padding: spacing.md,
-    paddingBottom: 100,
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.xl,
   },
   mealCard: {
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
+    padding: spacing.lg,
+    borderRadius: borderRadius.lg,
     marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
   },
   mealHeader: {
     flexDirection: 'row',
@@ -501,10 +492,9 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   mealType: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
     color: colors.text,
-    textTransform: 'capitalize',
   },
   mealName: {
     fontSize: 16,
@@ -519,20 +509,16 @@ const styles = StyleSheet.create({
   },
   mealStats: {
     flexDirection: 'row',
-    gap: spacing.sm,
+    gap: spacing.md,
   },
-  statChip: {
+  mealStatItem: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: 'rgba(255,255,255,0.8)',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    borderRadius: borderRadius.sm,
   },
   statText: {
-    fontSize: 12,
-    color: colors.text,
+    fontSize: 13,
+    color: colors.textSecondary,
     fontWeight: '500',
   },
   // Modal

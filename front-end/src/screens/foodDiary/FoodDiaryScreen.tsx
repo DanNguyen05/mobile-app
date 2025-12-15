@@ -14,7 +14,7 @@ import {
   Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { format } from 'date-fns';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -24,8 +24,15 @@ import { colors, spacing, borderRadius } from '../../context/ThemeContext';
 import { MealCard } from '../../components/MealCard';
 
 const MEAL_TYPES = ['Breakfast', 'Lunch', 'Dinner', 'Snack'] as const;
+const MEAL_TYPE_LABELS: Record<string, string> = {
+  Breakfast: 'Bữa sáng',
+  Lunch: 'Bữa trưa',
+  Dinner: 'Bữa tối',
+  Snack: 'Bữa phụ',
+};
 
 export default function FoodDiaryScreen() {
+  const navigation = useNavigation();
   const [foodLogs, setFoodLogs] = useState<FoodLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -34,6 +41,7 @@ export default function FoodDiaryScreen() {
   const [analyzingImage, setAnalyzingImage] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedImageBase64, setSelectedImageBase64] = useState<string | null>(null);
   const [aiResult, setAiResult] = useState<{
     foodName: string;
     calories: number;
@@ -106,6 +114,7 @@ export default function FoodDiaryScreen() {
     setFat('');
     setMealType('Breakfast');
     setSelectedImage(null);
+    setSelectedImageBase64(null);
     setAiResult(null);
   };
 
@@ -156,10 +165,13 @@ export default function FoodDiaryScreen() {
       allowsEditing: true,
       aspect: [4, 3],
       quality: 0.8,
+      base64: true,
     });
 
     if (!result.canceled && result.assets[0]) {
-      setSelectedImage(result.assets[0].uri);
+      const asset = result.assets[0];
+      setSelectedImage(asset.uri);
+      setSelectedImageBase64(asset.base64 ?? null);
       setShowImageModal(true);
     }
   };
@@ -176,10 +188,13 @@ export default function FoodDiaryScreen() {
       allowsEditing: true,
       aspect: [4, 3],
       quality: 0.8,
+      base64: true,
     });
 
     if (!result.canceled && result.assets[0]) {
-      setSelectedImage(result.assets[0].uri);
+      const asset = result.assets[0];
+      setSelectedImage(asset.uri);
+      setSelectedImageBase64(asset.base64 ?? null);
       setShowImageModal(true);
     }
   };
@@ -204,6 +219,10 @@ export default function FoodDiaryScreen() {
 
     setSaving(true);
     try {
+      const imagePayload = selectedImageBase64
+        ? `data:image/jpeg;base64,${selectedImageBase64}`
+        : selectedImage || undefined;
+
       await api.addFoodLog({
         food_name: foodName,
         calories: parseInt(calories),
@@ -212,6 +231,7 @@ export default function FoodDiaryScreen() {
         fat_g: parseFloat(fat) || 0,
         meal_type: mealType,
         eaten_at: new Date().toISOString(),
+        image_url: imagePayload,
       });
       
       // Close modal and reset form first
@@ -278,13 +298,11 @@ export default function FoodDiaryScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.headerGradient}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Nhật ký ăn uống</Text>
-          <Text style={styles.date}>{format(new Date(), 'EEEE, MMM d')}</Text>
-        </View>
-      </View>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
+      {/* Header */}
+      <View style={styles.header}>
+<Text style={styles.headerTitle}>Nhật ký</Text>
+</View>
 
       {/* Summary */}
       <View style={styles.summaryCard}>
@@ -292,25 +310,25 @@ export default function FoodDiaryScreen() {
         <View style={styles.summaryRow}>
           <View style={styles.summaryItem}>
             <Text style={styles.summaryValue}>{totals.calories}</Text>
-            <Text style={styles.summaryLabel}>Calories</Text>
+            <Text style={styles.summaryLabel}>Calo</Text>
           </View>
           <View style={styles.summaryItem}>
             <Text style={[styles.summaryValue, { color: colors.protein }]}>
               {Math.round(totals.protein)}g
             </Text>
-            <Text style={styles.summaryLabel}>Protein</Text>
+            <Text style={styles.summaryLabel}>Đạm</Text>
           </View>
           <View style={styles.summaryItem}>
             <Text style={[styles.summaryValue, { color: colors.carbs }]}>
               {Math.round(totals.carbs)}g
             </Text>
-            <Text style={styles.summaryLabel}>Carbs</Text>
+            <Text style={styles.summaryLabel}>Tinh bột</Text>
           </View>
           <View style={styles.summaryItem}>
             <Text style={[styles.summaryValue, { color: colors.fat }]}>
               {Math.round(totals.fat)}g
             </Text>
-            <Text style={styles.summaryLabel}>Béo</Text>
+            <Text style={styles.summaryLabel}>Chất béo</Text>
           </View>
         </View>
       </View>
@@ -321,27 +339,35 @@ export default function FoodDiaryScreen() {
       >
         {MEAL_TYPES.map((type) => (
           <View key={type} style={styles.mealSection}>
-            <Text style={styles.mealTypeTitle}>{type}</Text>
+            <Text style={styles.mealTypeTitle}>{MEAL_TYPE_LABELS[type]}</Text>
             {groupedMeals[type]?.length > 0 ? (
-              groupedMeals[type]?.map((log) => (
-                <TouchableOpacity
-                  key={log.log_id}
-                  onLongPress={() => handleDeleteFood(log.log_id)}
-                >
-                  <MealCard
-                    meal={{
-                      id: String(log.log_id),
-                      name: log.food_name,
-                      calories: log.calories,
-                      protein: Math.round(log.protein_g),
-                      carbs: Math.round(log.carbs_g),
-                      fat: Math.round(log.fat_g),
-                      time: format(new Date(log.eaten_at), 'h:mm a'),
-                      status: type,
-                    }}
-                  />
-                </TouchableOpacity>
-              ))
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.mealRow}
+              >
+                {groupedMeals[type]?.map((log) => (
+                  <TouchableOpacity
+                    key={log.log_id}
+                    style={styles.mealCardWrapper}
+                    onLongPress={() => handleDeleteFood(log.log_id)}
+                  >
+                    <MealCard
+                      meal={{
+                        id: String(log.log_id),
+                        name: log.food_name,
+                        calories: log.calories,
+                        protein: Math.round(log.protein_g),
+                        carbs: Math.round(log.carbs_g),
+                        fat: Math.round(log.fat_g),
+                        time: format(new Date(log.eaten_at), 'h:mm a'),
+                        status: type,
+                        image: log.image_url ?? (log as any).imageUrl,
+                      }}
+                    />
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
             ) : (
               <View style={styles.emptyMeal}>
                 <Text style={styles.emptyMealText}>Chưa ghi nhận {type}</Text>
@@ -427,7 +453,7 @@ export default function FoodDiaryScreen() {
               </View>
 
               <View style={styles.inputContainer}>
-                <Text style={styles.label}>Calories *</Text>
+                <Text style={styles.label}>Calo *</Text>
                 <TextInput
                   style={styles.input}
                   placeholder="0"
@@ -440,7 +466,7 @@ export default function FoodDiaryScreen() {
 
               <View style={styles.macroRow}>
                 <View style={[styles.inputContainer, { flex: 1 }]}>
-                  <Text style={styles.label}>Protein (g)</Text>
+                  <Text style={styles.label}>�?m (g)</Text>
                   <TextInput
                     style={styles.input}
                     placeholder="0"
@@ -451,7 +477,7 @@ export default function FoodDiaryScreen() {
                   />
                 </View>
                 <View style={[styles.inputContainer, { flex: 1 }]}>
-                  <Text style={styles.label}>Carbs (g)</Text>
+                  <Text style={styles.label}>Tinh b?t (g)</Text>
                   <TextInput
                     style={styles.input}
                     placeholder="0"
@@ -462,7 +488,7 @@ export default function FoodDiaryScreen() {
                   />
                 </View>
                 <View style={[styles.inputContainer, { flex: 1 }]}>
-                  <Text style={styles.label}>Fat (g)</Text>
+                  <Text style={styles.label}>Ch?t b�o (g)</Text>
                   <TextInput
                     style={styles.input}
                     placeholder="0"
@@ -515,6 +541,7 @@ export default function FoodDiaryScreen() {
                   onPress={() => {
                     setShowImageModal(false);
                     setSelectedImage(null);
+                    setSelectedImageBase64(null);
                   }}
                 >
                   <Text style={styles.imageModalBtnTextSecondary}>Hủy</Text>
@@ -541,33 +568,26 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5F7FA',
   },
   loadingContainer: {
-    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  headerGradient: {
-    backgroundColor: colors.primary,
-    paddingBottom: spacing.lg,
-  },
   header: {
-    padding: spacing.md,
-    paddingTop: spacing.sm,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.primary,
+    paddingTop: 50,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.md,
   },
-  title: {
-    fontSize: 32,
-    fontWeight: '800',
+headerTitle: {
+    fontSize: 20,
+    fontWeight: '700',
     color: '#fff',
-    letterSpacing: -0.5,
-  },
-  date: {
-    fontSize: 15,
-    color: 'rgba(255,255,255,0.85)',
-    marginTop: 4,
-    fontWeight: '500',
-  },
+    textAlign: 'center',
+    },
   summaryCard: {
     marginHorizontal: spacing.md,
-    marginTop: -spacing.lg,
+    marginTop: spacing.lg,
     backgroundColor: '#fff',
     borderRadius: borderRadius.xl,
     padding: spacing.lg,
@@ -591,8 +611,7 @@ const styles = StyleSheet.create({
   },
   summaryItem: {
     alignItems: 'center',
-    flex: 1,
-  },
+    },
   summaryValue: {
     fontSize: 24,
     fontWeight: '800',
@@ -608,10 +627,17 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: spacing.md,
     paddingTop: spacing.md,
-    paddingBottom: 120,
+    paddingBottom: 200,
   },
   mealSection: {
     marginBottom: spacing.xl,
+  },
+  mealRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  mealCardWrapper: {
+    width: 280,
   },
   mealTypeTitle: {
     fontSize: 20,
@@ -667,7 +693,6 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   modalOverlay: {
-    flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'flex-end',
   },
@@ -678,8 +703,7 @@ const styles = StyleSheet.create({
     maxHeight: '85%',
   },
   modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     alignItems: 'center',
     padding: spacing.md,
     borderBottomWidth: 1,
@@ -717,7 +741,6 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   mealTypeBtn: {
-    flex: 1,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.md,
     backgroundColor: colors.background,
@@ -769,7 +792,6 @@ const styles = StyleSheet.create({
     borderColor: colors.primary + '40',
   },
   aiResultText: {
-    flex: 1,
     fontSize: 13,
     fontWeight: '600',
     color: colors.primary,
@@ -787,7 +809,6 @@ const styles = StyleSheet.create({
   },
   // Image Analysis Modal
   imageModalOverlay: {
-    flex: 1,
     backgroundColor: 'rgba(0,0,0,0.8)',
     justifyContent: 'center',
     alignItems: 'center',
@@ -833,7 +854,6 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   imageModalBtn: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

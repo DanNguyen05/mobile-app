@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "HealthyCare",
-    "slug": "healthy-care-mobile",
+    "name": "Ceres",
+    "slug": "ceres-health",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -17,14 +17,14 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.healthycare.app"
+      "bundleIdentifier": "com.ceres.health"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#10b981"
       },
-      "package": "com.healthycare.app"
+      "package": "com.ceres.health"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -33,13 +33,13 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow HealthyCare to access your camera for food scanning."
+          "cameraPermission": "Allow Ceres to access your camera for food scanning."
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow HealthyCare to access your photos for progress tracking."
+          "photosPermission": "Allow Ceres to access your photos for progress tracking."
         }
       ],
       "expo-secure-store",

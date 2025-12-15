@@ -11,18 +11,28 @@ import {
   Alert,
   Modal,
   ActivityIndicator,
-  Platform,
   StatusBar,
+  Linking,
+  Image,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { format } from 'date-fns';
 import { Ionicons } from '@expo/vector-icons';
 
 import { api, type WorkoutLog } from '../../services/api';
 import { colors, spacing, borderRadius } from '../../context/ThemeContext';
-import ScreenBackground from '../../components/ScreenBackground';
-import { LinearGradient } from 'expo-linear-gradient';
+
+interface VideoExercise {
+  id: string;
+  name: string;
+  description: string;
+  videoUrl: string;
+  thumbnailUrl: string;
+  muscleGroups: string[];
+  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
+  duration: number;
+  calories: number;
+}
 
 const EXERCISE_TYPES = [
   { id: 'running', name: 'Chạy bộ', icon: '🏃', caloriesPerMin: 10 },
@@ -35,14 +45,85 @@ const EXERCISE_TYPES = [
   { id: 'other', name: 'Khác', icon: '⚡', caloriesPerMin: 5 },
 ];
 
+const VIDEO_EXERCISES: VideoExercise[] = [
+  {
+    id: "YOGA_BEGINNER_01",
+    name: "Morning Yoga Flow (20 Min)",
+    description: "Một bài tập yoga buổi sáng nhẹ nhàng để khởi động ngày mới",
+    videoUrl: "https://www.youtube.com/watch?v=4TLHLNX65-4",
+    thumbnailUrl: "https://i.ytimg.com/vi/4TLHLNX65-4/maxresdefault.jpg",
+    muscleGroups: ["Full Body", "Flexibility"],
+    difficulty: "Beginner",
+    duration: 20,
+    calories: 80,
+  },
+  {
+    id: "HIIT_FAT_LOSS_20",
+    name: "20 Min HIIT Fat Loss",
+    description: "Bài tập HIIT cường độ cao để đốt mỡ hiệu quả",
+    videoUrl: "https://www.youtube.com/watch?v=zJKtwow2oBc",
+    thumbnailUrl: "https://i.ytimg.com/vi/zJKtwow2oBc/maxresdefault.jpg",
+    muscleGroups: ["Full Body", "Cardio"],
+    difficulty: "Intermediate",
+    duration: 20,
+    calories: 350,
+  },
+  {
+    id: "BEGINNER_ABS_01",
+    name: "10 Min Beginner Abs",
+    description: "Bài tập bụng cho người mới bắt đầu, không cần dụng cụ",
+    videoUrl: "https://www.youtube.com/watch?v=DHD1-2P94DI",
+    thumbnailUrl: "https://i.ytimg.com/vi/DHD1-2P94DI/maxresdefault.jpg",
+    muscleGroups: ["Core", "Abs"],
+    difficulty: "Beginner",
+    duration: 10,
+    calories: 100,
+  },
+  {
+    id: "FULL_BODY_STRENGTH_01",
+    name: "Full Body Strength Workout",
+    description: "Tập sức mạnh toàn thân với tạ dumbbell",
+    videoUrl: "https://www.youtube.com/watch?v=_jGebGZnYrU",
+    thumbnailUrl: "https://i.ytimg.com/vi/_jGebGZnYrU/maxresdefault.jpg",
+    muscleGroups: ["Full Body", "Strength"],
+    difficulty: "Intermediate",
+    duration: 45,
+    calories: 320,
+  },
+  {
+    id: "PLANK_BEGINNER_01",
+    name: "Planks For Beginners",
+    description: "Hướng dẫn bài tập plank cơ bản cho người mới",
+    videoUrl: "https://www.youtube.com/watch?v=ASdvN_XEl_c",
+    thumbnailUrl: "https://i.ytimg.com/vi/ASdvN_XEl_c/maxresdefault.jpg",
+    muscleGroups: ["Core", "Abs"],
+    difficulty: "Beginner",
+    duration: 15,
+    calories: 150,
+  },
+  {
+    id: "CHEST_WORKOUT_01",
+    name: "15 Min Chest & Triceps",
+    description: "Bài tập ngực và tay sau hiệu quả với dumbbells",
+    videoUrl: "https://www.youtube.com/watch?v=AiwbOqWfqvE",
+    thumbnailUrl: "https://i.ytimg.com/vi/AiwbOqWfqvE/maxresdefault.jpg",
+    muscleGroups: ["Chest", "Triceps"],
+    difficulty: "Intermediate",
+    duration: 15,
+    calories: 200,
+  },
+];
+
 export default function ExercisesScreen() {
   const navigation = useNavigation();
-  const insets = useSafeAreaInsets();
   const [workouts, setWorkouts] = useState<WorkoutLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [selectedDifficulty, setSelectedDifficulty] = useState<'All' | 'Beginner' | 'Intermediate' | 'Advanced'>('All');
+  const [selectedVideo, setSelectedVideo] = useState<VideoExercise | null>(null);
+  const [videoModalVisible, setVideoModalVisible] = useState(false);
 
   // Form state
   const [selectedExercise, setSelectedExercise] = useState(EXERCISE_TYPES[0]);
@@ -85,6 +166,50 @@ export default function ExercisesScreen() {
     setRefreshing(true);
     await fetchWorkouts();
     setRefreshing(false);
+  };
+
+  const handleVideoPress = (video: VideoExercise) => {
+    setSelectedVideo(video);
+    setVideoModalVisible(true);
+  };
+
+  const handleStartWorkout = async () => {
+    if (!selectedVideo) return;
+
+    try {
+      // Mở video YouTube
+      await Linking.openURL(selectedVideo.videoUrl);
+      
+      // Tự động thêm workout log
+      const workoutData = {
+        exercise_name: selectedVideo.name,
+        duration_minutes: selectedVideo.duration,
+        calories_burned_estimated: selectedVideo.calories,
+      };
+
+      await api.addWorkoutLog(workoutData);
+      Alert.alert('Thành công', 'Bài tập đã được ghi nhận! Chúc bạn tập luyện hiệu quả 💪');
+      
+      setVideoModalVisible(false);
+      setSelectedVideo(null);
+      fetchWorkouts(); // Refresh danh sách
+    } catch (error) {
+      console.error('Error starting workout:', error);
+      Alert.alert('Lỗi', 'Không thể ghi nhận bài tập');
+    }
+  };
+
+  const handleWatchOnly = async () => {
+    if (!selectedVideo) return;
+    
+    try {
+      await Linking.openURL(selectedVideo.videoUrl);
+      setVideoModalVisible(false);
+      setSelectedVideo(null);
+    } catch (error) {
+      console.error('Error opening video:', error);
+      Alert.alert('Lỗi', 'Không thể mở video');
+    }
   };
 
   const resetForm = () => {
@@ -150,107 +275,151 @@ export default function ExercisesScreen() {
   const totalCaloriesBurned = workouts.reduce((sum, w) => sum + w.calories_burned_estimated, 0);
   const totalDuration = workouts.reduce((sum, w) => sum + w.duration_minutes, 0);
 
+  const filteredVideos = selectedDifficulty === 'All' 
+    ? VIDEO_EXERCISES 
+    : VIDEO_EXERCISES.filter(v => v.difficulty === selectedDifficulty);
+
   if (loading) {
     return (
-      <ScreenBackground>
-        <View style={{ flex: 1 }}>
-          <StatusBar barStyle="light-content" backgroundColor="#10b981" />
-          <View style={[styles.customHeader, { paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight || 0 : insets.top }]}>
-            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-              <Ionicons name="arrow-back" size={24} color="#fff" />
-            </TouchableOpacity>
-            <Text style={styles.customHeaderTitle}>Bài tập</Text>
-            <View style={{ width: 40 }} />
-          </View>
-          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-            <ActivityIndicator size="large" color={colors.primary} />
-          </View>
+      <View style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
-      </ScreenBackground>
+      </View>
     );
   }
 
   return (
-    <ScreenBackground>
-      <View style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="#10b981" />
-        {/* Custom Header */}
-        <View style={[styles.customHeader, { paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight || 0 : insets.top }]}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color="#fff" />
-          </TouchableOpacity>
-          <Text style={styles.customHeaderTitle}>Bài tập</Text>
-          <View style={{ width: 40 }} />
-        </View>
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="#fff" />
+        </TouchableOpacity>
+        <Text style={styles.title}>Bài tập</Text>
+        <View style={styles.headerSpacer} />
+      </View>
 
-        {/* Summary Cards */}
-        <View style={styles.summaryRow}>
-          <View style={styles.summaryCard}>
-            <View style={[styles.iconContainer, { backgroundColor: '#FF6B6B' }]}>
-              <Text style={styles.summaryIcon}>🔥</Text>
-            </View>
-            <Text style={styles.summaryValue}>{totalCaloriesBurned}</Text>
-            <Text style={styles.summaryLabel}>Calo đốt</Text>
-          </View>
-          <View style={styles.summaryCard}>
-            <View style={[styles.iconContainer, { backgroundColor: '#FFB84D' }]}>
-              <Text style={styles.summaryIcon}>⏱️</Text>
-            </View>
-            <Text style={styles.summaryValue}>{totalDuration}</Text>
-            <Text style={styles.summaryLabel}>Phút</Text>
-          </View>
-          <View style={styles.summaryCard}>
-            <View style={[styles.iconContainer, { backgroundColor: '#10b981' }]}>
-              <Text style={styles.summaryIcon}>💪</Text>
-            </View>
-            <Text style={styles.summaryValue}>{workouts.length}</Text>
-            <Text style={styles.summaryLabel}>Bài tập</Text>
-          </View>
+      {/* Summary */}
+      <View style={styles.summaryRow}>
+        <View style={styles.summaryCard}>
+          <Text style={styles.summaryIcon}>🔥</Text>
+          <Text style={styles.summaryValue}>{totalCaloriesBurned}</Text>
+          <Text style={styles.summaryLabel}>Calo đốt</Text>
         </View>
+        <View style={styles.summaryCard}>
+          <Text style={styles.summaryIcon}>⏱️</Text>
+          <Text style={styles.summaryValue}>{totalDuration}</Text>
+          <Text style={styles.summaryLabel}>Phút</Text>
+        </View>
+        <View style={styles.summaryCard}>
+          <Text style={styles.summaryIcon}>💪</Text>
+          <Text style={styles.summaryValue}>{workouts.length}</Text>
+          <Text style={styles.summaryLabel}>Bài tập</Text>
+        </View>
+      </View>
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>🏃 Bài tập hôm nay</Text>
-          <Text style={styles.sectionCount}>{workouts.length} bài</Text>
+        {/* Video Workout Section */}
+        <View style={styles.videoSection}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Video bài tập gợi ý</Text>
+            <View style={styles.filterButtons}>
+              {(['All', 'Beginner', 'Intermediate', 'Advanced'] as const).map((level) => (
+                <TouchableOpacity
+                  key={level}
+                  style={[
+                    styles.filterBtn,
+                    selectedDifficulty === level && styles.filterBtnActive,
+                  ]}
+                  onPress={() => setSelectedDifficulty(level)}
+                >
+                  <Text
+                    style={[
+                      styles.filterBtnText,
+                      selectedDifficulty === level && styles.filterBtnTextActive,
+                    ]}
+                  >
+                    {level === 'All' ? 'Tất cả' : level}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+          {filteredVideos.length > 0 ? (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.videoScroll}>
+              {filteredVideos.map((video) => (
+                <TouchableOpacity
+                  key={video.id}
+                  style={styles.videoCard}
+                  onPress={() => handleVideoPress(video)}
+                >
+                  <Image source={{ uri: video.thumbnailUrl }} style={styles.videoThumbnail} />
+                  <View style={styles.videoBadge}>
+                    <Ionicons name="play-circle" size={24} color="#fff" />
+                  </View>
+                  <View style={styles.videoInfo}>
+                    <Text style={styles.videoName} numberOfLines={2}>{video.name}</Text>
+                    <View style={styles.videoMeta}>
+                      <View style={styles.videoMetaItem}>
+                        <Ionicons name="time-outline" size={14} color={colors.textSecondary} />
+                        <Text style={styles.videoMetaText}>{video.duration} min</Text>
+                      </View>
+                      <View style={styles.videoMetaItem}>
+                        <Ionicons name="flame-outline" size={14} color={colors.textSecondary} />
+                        <Text style={styles.videoMetaText}>{video.calories} kcal</Text>
+                      </View>
+                    </View>
+                    <View style={styles.difficultyBadge}>
+                      <Text style={styles.difficultyText}>{video.difficulty}</Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          ) : (
+            <View style={styles.emptyVideoState}>
+              <Text style={styles.emptyVideosText}>
+                Không có video nào cho độ khó "{selectedDifficulty}"
+              </Text>
+            </View>
+          )}
         </View>
+
+        <Text style={styles.sectionTitle}>Bài tập hôm nay</Text>
         
         {workouts.length > 0 ? (
-          <View style={styles.workoutsContainer}>
-            {workouts.map((workout) => (
-              <TouchableOpacity
-                key={workout.log_id}
-                style={styles.workoutCard}
-                onLongPress={() => handleDeleteWorkout(workout.log_id)}
-              >
-                <View style={styles.workoutIconBig}>
-                  <Text style={styles.workoutIconText}>
-                    {EXERCISE_TYPES.find(e => 
-                      e.name.toLowerCase() === workout.exercise_name.toLowerCase()
-                    )?.icon || '⚡'}
-                  </Text>
-                </View>
-                <View style={styles.workoutInfo}>
-                  <Text style={styles.workoutName}>{workout.exercise_name}</Text>
-                  <Text style={styles.workoutTime}>
-                    {format(new Date(workout.completed_at), 'h:mm a')}
-                  </Text>
-                </View>
-                <View style={styles.workoutStats}>
-                  <View style={styles.statBadge}>
-                    <Text style={styles.workoutDuration}>{workout.duration_minutes} min</Text>
-                  </View>
-                  <View style={[styles.statBadge, { backgroundColor: '#FFF7ED' }]}>
-                    <Text style={styles.workoutCalories}>
-                      {workout.calories_burned_estimated} kcal
-                    </Text>
-                  </View>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
+          workouts.map((workout) => (
+            <TouchableOpacity
+              key={workout.log_id}
+              style={styles.workoutCard}
+              onLongPress={() => handleDeleteWorkout(workout.log_id)}
+            >
+              <View style={styles.workoutIcon}>
+                <Text style={styles.workoutIconText}>
+                  {EXERCISE_TYPES.find(e => 
+                    e.name.toLowerCase() === workout.exercise_name.toLowerCase()
+                  )?.icon || '⚡'}
+                </Text>
+              </View>
+              <View style={styles.workoutInfo}>
+                <Text style={styles.workoutName}>{workout.exercise_name}</Text>
+                <Text style={styles.workoutTime}>
+                  {format(new Date(workout.completed_at), 'h:mm a')}
+                </Text>
+              </View>
+              <View style={styles.workoutStats}>
+                <Text style={styles.workoutDuration}>{workout.duration_minutes} min</Text>
+                <Text style={styles.workoutCalories}>
+                  {workout.calories_burned_estimated} kcal
+                </Text>
+              </View>
+            </TouchableOpacity>
+          ))
         ) : (
           <View style={styles.emptyState}>
             <Text style={styles.emptyStateIcon}>🏃</Text>
@@ -350,220 +519,312 @@ export default function ExercisesScreen() {
           </View>
         </View>
       </Modal>
-      </View>
-    </ScreenBackground>
+
+      {/* Video Action Modal */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={videoModalVisible}
+        onRequestClose={() => setVideoModalVisible(false)}
+      >
+        <View style={styles.videoModalOverlay}>
+          <View style={styles.videoActionModal}>
+            {selectedVideo && (
+              <>
+                <Text style={styles.videoActionTitle}>{selectedVideo.name}</Text>
+                <View style={styles.videoActionStats}>
+                  <View style={styles.videoActionStat}>
+                    <Ionicons name="time-outline" size={20} color={colors.primary} />
+                    <Text style={styles.videoActionStatText}>{selectedVideo.duration} phút</Text>
+                  </View>
+                  <View style={styles.videoActionStat}>
+                    <Ionicons name="flame-outline" size={20} color="#ef4444" />
+                    <Text style={styles.videoActionStatText}>{selectedVideo.calories} kcal</Text>
+                  </View>
+                </View>
+                <Text style={styles.videoActionDescription}>{selectedVideo.description}</Text>
+
+                <View style={styles.videoActionButtons}>
+                  <TouchableOpacity
+                    style={[styles.videoActionBtn, styles.videoActionBtnPrimary]}
+                    onPress={handleStartWorkout}
+                  >
+                    <Ionicons name="fitness" size={20} color="#fff" />
+                    <Text style={styles.videoActionBtnTextPrimary}>Bắt đầu tập</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.videoActionBtn, styles.videoActionBtnSecondary]}
+                    onPress={handleWatchOnly}
+                  >
+                    <Ionicons name="play-circle-outline" size={20} color={colors.primary} />
+                    <Text style={styles.videoActionBtnTextSecondary}>Chỉ xem</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity
+                  style={styles.videoActionClose}
+                  onPress={() => setVideoModalVisible(false)}
+                >
+                  <Text style={styles.videoActionCloseText}>Đóng</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'transparent',
-  },
-  customHeader: {
-    backgroundColor: '#10b981',
-    paddingBottom: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-  },
-  customHeaderTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#fff',
-    flex: 1,
-    textAlign: 'center',
+    backgroundColor: '#F5F7FA',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  headerGradient: {
-    marginHorizontal: spacing.md,
-    marginTop: spacing.sm,
-    marginBottom: spacing.md,
-    padding: spacing.lg,
-    borderRadius: borderRadius.xl,
-    shadowColor: '#FF6B6B',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
+  header: {
+    backgroundColor: colors.primary,
+    paddingTop: 50,
+    paddingBottom: spacing.md,
+    paddingHorizontal: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  backButton: {
+    padding: spacing.sm,
   },
   title: {
-    fontSize: 28,
+    fontSize: 20,
     fontWeight: '700',
     color: '#fff',
-    letterSpacing: -0.5,
+    letterSpacing: 0.3,
+    flex: 1,
+    textAlign: 'center',
+    marginRight: -40,
   },
-  date: {
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.9)',
-    marginTop: 4,
-    fontWeight: '500',
+  headerSpacer: {
+    width: 40,
   },
   summaryRow: {
     flexDirection: 'row',
-    paddingHorizontal: spacing.md,
-    marginBottom: spacing.md,
+    padding: spacing.md,
     gap: spacing.sm,
   },
   summaryCard: {
     flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    borderRadius: borderRadius.xl,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
     padding: spacing.md,
     alignItems: 'center',
-    gap: 6,
-    borderWidth: 1,
-    borderColor: 'rgba(255,107,107,0.08)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  iconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
   },
   summaryIcon: {
-    fontSize: 16,
+    fontSize: 24,
+    marginBottom: spacing.xs,
   },
   summaryValue: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: '700',
     color: colors.text,
   },
   summaryLabel: {
     fontSize: 11,
     color: colors.textSecondary,
-    fontWeight: '600',
+    marginTop: 2,
   },
   scrollContent: {
     padding: spacing.md,
     paddingTop: 0,
     paddingBottom: 100,
   },
+  videoSection: {
+    marginBottom: spacing.lg,
+  },
   sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     marginBottom: spacing.md,
   },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.text,
-    letterSpacing: -0.3,
+  filterButtons: {
+    flexDirection: 'row',
+    gap: spacing.xs,
   },
-  sectionCount: {
-    fontSize: 13,
+  filterBtn: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  filterBtnActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  filterBtnText: {
+    fontSize: 12,
     fontWeight: '600',
     color: colors.textSecondary,
-    backgroundColor: 'rgba(255,107,107,0.1)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
   },
-  workoutsContainer: {
-    gap: spacing.sm,
+  filterBtnTextActive: {
+    color: '#fff',
+  },
+  videoScroll: {
+    marginBottom: spacing.md,
+  },
+  emptyVideoState: {
+    paddingVertical: spacing.xl,
+    alignItems: 'center',
+  },
+  emptyVideosText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    fontStyle: 'italic',
+  },
+  videoCard: {
+    width: 280,
+    marginRight: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.xl,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  videoThumbnail: {
+    width: '100%',
+    height: 160,
+    backgroundColor: colors.background,
+  },
+  videoBadge: {
+    position: 'absolute',
+    top: 60,
+    left: '50%',
+    marginLeft: -24,
+    width: 48,
+    height: 48,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  videoInfo: {
+    padding: spacing.md,
+  },
+  videoName: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.text,
+    marginBottom: spacing.sm,
+    height: 40,
+  },
+  videoMeta: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  videoMetaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  videoMetaText: {
+    fontSize: 13,
+    color: colors.textSecondary,
+  },
+  difficultyBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    backgroundColor: colors.primaryLight,
+    borderRadius: borderRadius.sm,
+  },
+  difficultyText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.primary,
+  },
+  emptyVideos: {
+    width: 280,
+    height: 200,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.xl,
+    marginRight: spacing.md,
+  },
+  emptyVideosText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: spacing.md,
   },
   workoutCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    borderRadius: borderRadius.xl,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: 'rgba(255,107,107,0.08)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  workoutIconBig: {
-    width: 52,
-    height: 52,
+    backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
-    backgroundColor: '#FFF7ED',
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  workoutIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.primaryLight,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: spacing.md,
-    borderWidth: 2,
-    borderColor: 'rgba(255,107,107,0.2)',
   },
   workoutIconText: {
-    fontSize: 26,
+    fontSize: 24,
   },
   workoutInfo: {
     flex: 1,
   },
   workoutName: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '600',
     color: colors.text,
-    letterSpacing: -0.2,
   },
   workoutTime: {
     fontSize: 13,
     color: colors.textSecondary,
     marginTop: 2,
-    fontWeight: '500',
   },
   workoutStats: {
-    gap: 6,
     alignItems: 'flex-end',
   },
-  statBadge: {
-    backgroundColor: '#F0FDF4',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
   workoutDuration: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#10b981',
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
   },
   workoutCalories: {
     fontSize: 13,
-    fontWeight: '700',
-    color: '#FF6B6B',
+    color: colors.primary,
+    marginTop: 2,
   },
   emptyState: {
-    backgroundColor: 'rgba(255,255,255,0.7)',
-    borderRadius: borderRadius.xl,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
     padding: spacing.xxl,
     alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,107,107,0.1)',
-    borderStyle: 'dashed',
   },
   emptyStateIcon: {
     fontSize: 48,
-    marginBottom: spacing.sm,
-    opacity: 0.5,
+    marginBottom: spacing.md,
   },
   emptyStateText: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
     color: colors.text,
   },
@@ -579,7 +840,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#FF6B6B',
+    backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
@@ -587,19 +848,16 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 5,
-    borderWidth: 0,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: 'rgba(255,255,255,0.98)',
-    borderTopLeftRadius: borderRadius.xl * 1.5,
-    borderTopRightRadius: borderRadius.xl * 1.5,
-    borderWidth: 2,
-    borderColor: 'rgba(255,107,107,0.2)',
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: borderRadius.xl,
+    borderTopRightRadius: borderRadius.xl,
     maxHeight: '85%',
   },
   modalHeader: {
@@ -701,5 +959,83 @@ const styles = StyleSheet.create({
     color: colors.surface,
     fontSize: 16,
     fontWeight: '600',
+  },
+  videoModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.lg,
+  },
+  videoActionModal: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.xl,
+    padding: spacing.xl,
+    width: '85%',
+    maxWidth: 400,
+  },
+  videoActionTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.text,
+    marginBottom: spacing.md,
+  },
+  videoActionStats: {
+    flexDirection: 'row',
+    gap: spacing.lg,
+    marginBottom: spacing.md,
+  },
+  videoActionStat: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  videoActionStatText: {
+    fontSize: 14,
+    color: colors.text,
+    fontWeight: '600',
+  },
+  videoActionDescription: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    lineHeight: 20,
+    marginBottom: spacing.xl,
+  },
+  videoActionButtons: {
+    gap: spacing.md,
+  },
+  videoActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.lg,
+    gap: spacing.sm,
+  },
+  videoActionBtnPrimary: {
+    backgroundColor: colors.primary,
+  },
+  videoActionBtnSecondary: {
+    backgroundColor: 'transparent',
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+  },
+  videoActionBtnTextPrimary: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  videoActionBtnTextSecondary: {
+    color: colors.primary,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  videoActionClose: {
+    marginTop: spacing.md,
+    alignItems: 'center',
+  },
+  videoActionCloseText: {
+    color: colors.textSecondary,
+    fontSize: 14,
   },
 });

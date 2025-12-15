@@ -49,7 +49,7 @@ export interface FoodLog {
   fat_g: number;
   health_consideration: string;
   is_corrected: boolean;
-  imageUrl?: string;
+  image_url?: string;
 }
 
 export interface WorkoutLog {

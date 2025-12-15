@@ -8,17 +8,14 @@ import {
   RefreshControl,
   TouchableOpacity,
   Dimensions,
-  Platform,
-  StatusBar,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { format, subDays } from 'date-fns';
 import { LineChart } from 'react-native-chart-kit';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 
 import { useAuth } from '../../context/AuthContext';
-import { api, type BodyMeasurement, type DailyStatistics } from '../../services/api';
+import { api, type DailyStatistics } from '../../services/api';
 import { colors, spacing, borderRadius } from '../../context/ThemeContext';
 
 const { width } = Dimensions.get('window');
@@ -26,28 +23,20 @@ const { width } = Dimensions.get('window');
 export default function ProgressScreen() {
   const { user } = useAuth();
   const navigation = useNavigation();
-  const insets = useSafeAreaInsets();
-  const [measurements, setMeasurements] = useState<BodyMeasurement[]>([]);
   const [weeklyStats, setWeeklyStats] = useState<DailyStatistics[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [activeTab, setActiveTab] = useState<'weight' | 'calories'>('weight');
+  const [activeTab, setActiveTab] = useState<'calories' | 'protein'>('calories');
 
   const fetchData = useCallback(async () => {
     try {
       const endDate = format(new Date(), 'yyyy-MM-dd');
-      const startDate = format(subDays(new Date(), 7), 'yyyy-MM-dd');
-
-      // Temporarily skip body measurements until backend implements it
+      const startDate = format(subDays(new Date(), 6), 'yyyy-MM-dd');
       const statsRes = await api.getWeeklyStatistics(startDate, endDate);
-      
-      setMeasurements([]); // Empty for now
       setWeeklyStats(statsRes);
     } catch (error: any) {
       console.error('Error fetching progress data:', error);
-      // Set empty data on error instead of showing error to user
       setWeeklyStats([]);
-      setMeasurements([]);
     }
   }, []);
 
@@ -67,25 +56,30 @@ export default function ProgressScreen() {
   };
 
   // Prepare chart data
-  const weightData = measurements.slice(-7).map((m) => m.weight_kg);
-  const weightLabels = measurements.slice(-7).map((m) => format(new Date(m.measured_at), 'dd/MM'));
-
-  const caloriesData = weeklyStats.map((s) => s.total_calories);
-  const caloriesLabels = weeklyStats.map((s) => format(new Date(s.date), 'dd/MM'));
+  const caloriesData = weeklyStats.length > 0 
+    ? weeklyStats.map((s) => s.total_calories || 0)
+    : [0, 0, 0, 0, 0, 0, 0];
+  const proteinData = weeklyStats.length > 0
+    ? weeklyStats.map((s) => s.total_protein || 0)
+    : [0, 0, 0, 0, 0, 0, 0];
+  const labels = weeklyStats.length > 0
+    ? weeklyStats.map((s) => format(new Date(s.date), 'dd/MM'))
+    : ['', '', '', '', '', '', ''];
 
   const chartConfig = {
-    backgroundGradientFrom: colors.surface,
-    backgroundGradientTo: colors.surface,
+    backgroundGradientFrom: '#fff',
+    backgroundGradientTo: '#fff',
     color: (opacity = 1) => `rgba(16, 185, 129, ${opacity})`,
-    strokeWidth: 2,
+    strokeWidth: 3,
     barPercentage: 0.5,
     useShadowColorFromDataset: false,
     decimalPlaces: 0,
     labelColor: () => colors.textSecondary,
     propsForDots: {
-      r: '4',
+      r: '5',
       strokeWidth: '2',
       stroke: colors.primary,
+      fill: '#fff',
     },
   };
 
@@ -96,24 +90,24 @@ export default function ProgressScreen() {
 
   const getBMICategory = (bmi: number) => {
     if (bmi < 18.5) return { label: 'Thiếu cân', color: '#60A5FA' };
-    if (bmi < 25) return { label: 'Bình thường', color: '#10B981' };
+    if (bmi < 25) return { label: 'Bình thường', color: colors.primary };
     if (bmi < 30) return { label: 'Thừa cân', color: '#FBBF24' };
     return { label: 'Béo phì', color: '#EF4444' };
   };
 
   const bmiCategory = getBMICategory(bmi);
 
+  // Calculate weekly totals
+  const weeklyTotals = {
+    calories: weeklyStats.reduce((sum, s) => sum + (s.total_calories || 0), 0),
+    protein: weeklyStats.reduce((sum, s) => sum + (s.total_protein || 0), 0),
+    carbs: weeklyStats.reduce((sum, s) => sum + (s.total_carbs || 0), 0),
+    fat: weeklyStats.reduce((sum, s) => sum + (s.total_fat || 0), 0),
+  };
+
   if (loading) {
     return (
       <View style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="#10b981" />
-        <View style={[styles.customHeader, { paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight || 0 : insets.top }]}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color="#fff" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Tiến trình</Text>
-          <View style={{ width: 40 }} />
-        </View>
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>Đang tải...</Text>
         </View>
@@ -123,149 +117,126 @@ export default function ProgressScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#10b981" />
-      <View style={[styles.customHeader, { paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight || 0 : insets.top }]}>
+      <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Tiến trình</Text>
-        <View style={{ width: 40 }} />
+        <View style={styles.headerSpacer} />
       </View>
-
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         {/* BMI Card */}
         <View style={styles.bmiCard}>
-          <View style={styles.bmiHeader}>
-            <Text style={styles.bmiTitle}>Chỉ số khối cơ thể (BMI)</Text>
-            <View style={[styles.bmiBadge, { backgroundColor: bmiCategory.color + '20' }]}>
-              <Text style={[styles.bmiBadgeText, { color: bmiCategory.color }]}>
-                {bmiCategory.label}
-              </Text>
-            </View>
+          <View style={styles.cardHeader}>
+            <Ionicons name="fitness" size={24} color={colors.primary} />
+            <Text style={styles.cardTitle}>Chỉ số BMI</Text>
           </View>
           <View style={styles.bmiContent}>
-            <Text style={styles.bmiValue}>{bmi || '--'}</Text>
-            <View style={styles.bmiDetails}>
-              <Text style={styles.bmiDetailText}>Chiều cao: {user?.height_cm || '--'} cm</Text>
-              <Text style={styles.bmiDetailText}>Cân nặng: {user?.weight_kg || '--'} kg</Text>
+            <View style={styles.bmiLeft}>
+              <Text style={styles.bmiValue}>{bmi || '--'}</Text>
+              <View style={[styles.bmiBadge, { backgroundColor: bmiCategory.color + '15' }]}>
+                <Text style={[styles.bmiBadgeText, { color: bmiCategory.color }]}>
+                  {bmiCategory.label}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.bmiRight}>
+              <View style={styles.bmiDetail}>
+                <Ionicons name="arrow-up" size={16} color={colors.textSecondary} />
+                <Text style={styles.bmiDetailText}>Chiều cao: {user?.height_cm || '--'} cm</Text>
+              </View>
+              <View style={styles.bmiDetail}>
+                <Ionicons name="scale" size={16} color={colors.textSecondary} />
+                <Text style={styles.bmiDetailText}>Cân nặng: {user?.weight_kg || '--'} kg</Text>
+              </View>
             </View>
           </View>
           <View style={styles.bmiScale}>
             <View style={[styles.bmiScaleItem, { backgroundColor: '#60A5FA' }]} />
-            <View style={[styles.bmiScaleItem, { backgroundColor: '#10B981' }]} />
+            <View style={[styles.bmiScaleItem, { backgroundColor: colors.primary }]} />
             <View style={[styles.bmiScaleItem, { backgroundColor: '#FBBF24' }]} />
             <View style={[styles.bmiScaleItem, { backgroundColor: '#EF4444' }]} />
-          </View>
-          <View style={styles.bmiLabels}>
-            <Text style={styles.bmiLabel}>Thiếu</Text>
-            <Text style={styles.bmiLabel}>Bình thường</Text>
-            <Text style={styles.bmiLabel}>Thừa</Text>
-            <Text style={styles.bmiLabel}>Béo</Text>
           </View>
         </View>
 
         {/* Chart Tabs */}
         <View style={styles.tabs}>
           <TouchableOpacity
-            style={[styles.tab, activeTab === 'weight' && styles.tabActive]}
-            onPress={() => setActiveTab('weight')}
-          >
-            <Text style={[styles.tabText, activeTab === 'weight' && styles.tabTextActive]}>
-              Biển đổi cân nặng
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
             style={[styles.tab, activeTab === 'calories' && styles.tabActive]}
             onPress={() => setActiveTab('calories')}
           >
             <Text style={[styles.tabText, activeTab === 'calories' && styles.tabTextActive]}>
-              Calories nạp vào
+              Calories
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'protein' && styles.tabActive]}
+            onPress={() => setActiveTab('protein')}
+          >
+            <Text style={[styles.tabText, activeTab === 'protein' && styles.tabTextActive]}>
+              Protein
             </Text>
           </TouchableOpacity>
         </View>
 
-        {/* Chart */}
+        {/* Chart Card */}
         <View style={styles.chartCard}>
-          {activeTab === 'weight' ? (
-            weightData.length > 0 ? (
-              <LineChart
-                data={{
-                  labels: weightLabels,
-                  datasets: [{ data: weightData }],
-                }}
-                width={width - spacing.md * 4}
-                height={200}
-                chartConfig={chartConfig}
-                bezier
-                style={styles.chart}
-              />
-            ) : (
-              <View style={styles.noData}>
-                <Text style={styles.noDataText}>Chưa có dữ liệu cân nặng</Text>
-                <Text style={styles.noDataSubtext}>Ghi nhận đo lường để xem xu hướng</Text>
-              </View>
-            )
-          ) : caloriesData.length > 0 ? (
+          {weeklyStats.length > 0 ? (
             <LineChart
               data={{
-                labels: caloriesLabels,
-                datasets: [{ data: caloriesData }],
+                labels: labels,
+                datasets: [{ 
+                  data: activeTab === 'calories' ? caloriesData : proteinData 
+                }],
               }}
               width={width - spacing.md * 4}
-              height={200}
-              chartConfig={{
-                ...chartConfig,
-                color: (opacity = 1) => `rgba(249, 158, 11, ${opacity})`,
-              }}
+              height={220}
+              chartConfig={chartConfig}
               bezier
               style={styles.chart}
+              withInnerLines={false}
+              withOuterLines={true}
+              withVerticalLines={false}
+              withHorizontalLines={true}
             />
           ) : (
             <View style={styles.noData}>
-              <Text style={styles.noDataText}>Chưa có dữ liệu calories</Text>
-              <Text style={styles.noDataSubtext}>Ghi nhận bữa ăn để xem xu hướng</Text>
+              <Ionicons name="analytics-outline" size={48} color={colors.textSecondary} />
+              <Text style={styles.noDataText}>Chưa có dữ liệu</Text>
+              <Text style={styles.noDataSubtext}>Ghi nhận bữa ăn để xem xu hướng dinh dưỡng</Text>
             </View>
           )}
         </View>
 
-        {/* Stats Summary */}
-        <View style={styles.statsSection}>
-          <Text style={styles.sectionTitle}>Tổng kết tuần này</Text>
+        {/* Weekly Summary */}
+        <View style={styles.summaryCard}>
+          <View style={styles.cardHeader}>
+            <Ionicons name="calendar" size={24} color={colors.primary} />
+            <Text style={styles.cardTitle}>Tổng kết tuần</Text>
+          </View>
           <View style={styles.statsGrid}>
-            <View style={styles.statCard}>
-              <Text style={styles.statLabel}>Calo TB</Text>
-              <Text style={styles.statValue}>
-                {weeklyStats.length > 0
-                  ? Math.round(
-                      weeklyStats.reduce((sum, s) => sum + s.total_calories, 0) / weeklyStats.length
-                    )
-                  : '--'}
-              </Text>
+            <View style={styles.statItem}>
+              <Ionicons name="flame" size={20} color="#EF4444" />
+              <Text style={styles.statValue}>{weeklyTotals.calories}</Text>
+              <Text style={styles.statLabel}>Calories</Text>
             </View>
-            <View style={styles.statCard}>
-              <Text style={styles.statLabel}>Protein TB</Text>
-              <Text style={styles.statValue}>
-                {weeklyStats.length > 0
-                  ? Math.round(
-                      weeklyStats.reduce((sum, s) => sum + s.total_protein, 0) / weeklyStats.length
-                    ) + 'g'
-                  : '--'}
-              </Text>
+            <View style={styles.statItem}>
+              <Ionicons name="barbell" size={20} color="#10B981" />
+              <Text style={styles.statValue}>{weeklyTotals.protein}g</Text>
+              <Text style={styles.statLabel}>Protein</Text>
             </View>
-            <View style={styles.statCard}>
-              <Text style={styles.statLabel}>Tổng bài tập</Text>
-              <Text style={styles.statValue}>
-                {weeklyStats.reduce((sum, s) => sum + (s.workouts_count || 0), 0)}
-              </Text>
+            <View style={styles.statItem}>
+              <Ionicons name="nutrition" size={20} color="#FBBF24" />
+              <Text style={styles.statValue}>{weeklyTotals.carbs}g</Text>
+              <Text style={styles.statLabel}>Carbs</Text>
             </View>
-            <View style={styles.statCard}>
-              <Text style={styles.statLabel}>Calo đốt</Text>
-              <Text style={styles.statValue}>
-                {weeklyStats.reduce((sum, s) => sum + (s.calories_burned || 0), 0)}
-              </Text>
+            <View style={styles.statItem}>
+              <Ionicons name="water" size={20} color="#60A5FA" />
+              <Text style={styles.statValue}>{weeklyTotals.fat}g</Text>
+              <Text style={styles.statLabel}>Fat</Text>
             </View>
           </View>
         </View>
@@ -277,28 +248,30 @@ export default function ProgressScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F7FA',
+    backgroundColor: colors.background,
   },
-  customHeader: {
-    backgroundColor: '#10b981',
-    paddingBottom: 16,
+  header: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
+    alignItems: 'center',
+    backgroundColor: colors.primary,
+    paddingTop: 50,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.md,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'flex-start',
+    padding: spacing.sm,
   },
   headerTitle: {
+    flex: 1,
     fontSize: 20,
     fontWeight: '700',
     color: '#fff',
-    flex: 1,
     textAlign: 'center',
+    marginRight: -40,
+  },
+  headerSpacer: {
+    width: 40,
   },
   loadingContainer: {
     flex: 1,
@@ -306,96 +279,100 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    fontSize: 18,
+    fontSize: 16,
     color: colors.textSecondary,
-  },
-  header: {
-    padding: spacing.md,
-    paddingBottom: 0,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: colors.text,
   },
   scrollContent: {
     padding: spacing.md,
     paddingBottom: 100,
   },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  // BMI Card
   bmiCard: {
-    backgroundColor: colors.surface,
+    backgroundColor: '#fff',
     borderRadius: borderRadius.lg,
     padding: spacing.lg,
     marginBottom: spacing.md,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  bmiHeader: {
+  bmiContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: spacing.md,
   },
-  bmiTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
-  },
-  bmiBadge: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    borderRadius: borderRadius.full,
-  },
-  bmiBadgeText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  bmiContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.md,
+  bmiLeft: {
+    alignItems: 'flex-start',
   },
   bmiValue: {
     fontSize: 48,
     fontWeight: '700',
     color: colors.text,
-    marginRight: spacing.lg,
+    marginBottom: spacing.xs,
   },
-  bmiDetails: {},
+  bmiBadge: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
+  },
+  bmiBadgeText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  bmiRight: {
+    gap: spacing.sm,
+  },
+  bmiDetail: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
   bmiDetailText: {
     fontSize: 14,
     color: colors.textSecondary,
-    marginBottom: 4,
   },
   bmiScale: {
     flexDirection: 'row',
     height: 8,
-    borderRadius: 4,
+    borderRadius: borderRadius.full,
     overflow: 'hidden',
-    marginBottom: spacing.xs,
+    marginTop: spacing.sm,
   },
   bmiScaleItem: {
     flex: 1,
   },
-  bmiLabels: {
-    flexDirection: 'row',
-  },
-  bmiLabel: {
-    flex: 1,
-    fontSize: 10,
-    color: colors.textSecondary,
-    textAlign: 'center',
-  },
+  // Tabs
   tabs: {
     flexDirection: 'row',
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.md,
+    backgroundColor: '#fff',
+    borderRadius: borderRadius.lg,
     padding: 4,
     marginBottom: spacing.md,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   tab: {
     flex: 1,
     paddingVertical: spacing.sm,
-    borderRadius: borderRadius.md - 2,
     alignItems: 'center',
+    borderRadius: borderRadius.md,
   },
   tabActive: {
     backgroundColor: colors.primary,
@@ -406,60 +383,72 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
   tabTextActive: {
-    color: colors.surface,
+    color: '#fff',
   },
+  // Chart
   chartCard: {
-    backgroundColor: colors.surface,
+    backgroundColor: '#fff',
     borderRadius: borderRadius.lg,
-    padding: spacing.md,
+    padding: spacing.lg,
     marginBottom: spacing.md,
-    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   chart: {
+    marginVertical: spacing.sm,
     borderRadius: borderRadius.md,
   },
   noData: {
-    paddingVertical: spacing.xxl,
     alignItems: 'center',
+    paddingVertical: spacing.xl * 2,
   },
   noDataText: {
     fontSize: 16,
     fontWeight: '600',
     color: colors.text,
+    marginTop: spacing.md,
+    marginBottom: spacing.xs,
   },
   noDataSubtext: {
     fontSize: 14,
     color: colors.textSecondary,
-    marginTop: spacing.xs,
+    textAlign: 'center',
   },
-  statsSection: {
-    marginTop: spacing.md,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: spacing.md,
+  // Summary Card
+  summaryCard: {
+    backgroundColor: '#fff',
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: spacing.sm,
+    gap: spacing.md,
   },
-  statCard: {
-    width: (width - spacing.md * 3) / 2 - spacing.sm / 2,
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.md,
+  statItem: {
+    flex: 1,
+    minWidth: '45%',
+    alignItems: 'center',
     padding: spacing.md,
+    backgroundColor: colors.background,
+    borderRadius: borderRadius.md,
+  },
+  statValue: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.text,
+    marginVertical: spacing.xs,
   },
   statLabel: {
     fontSize: 13,
     color: colors.textSecondary,
-    marginBottom: spacing.xs,
-  },
-  statValue: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: colors.text,
   },
 });

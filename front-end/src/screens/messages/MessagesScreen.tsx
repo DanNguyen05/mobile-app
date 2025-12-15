@@ -15,7 +15,6 @@ import {
   Animated,
   StatusBar,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
@@ -109,7 +108,6 @@ const TypingIndicator = () => {
 export default function MessagesScreen() {
   const { user } = useAuth();
   const navigation = useNavigation();
-  const insets = useSafeAreaInsets();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -406,13 +404,12 @@ export default function MessagesScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#10b981" />
-      {/* Custom Header with Back Button */}
-      <View style={[styles.customHeader, { paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight || 0 : insets.top }]}>
+      <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
+      <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.customHeaderTitle}>Trợ lý AI</Text>
+        <Text style={styles.title}>Trợ lý AI</Text>
         <TouchableOpacity onPress={clearChat} style={styles.clearButton} activeOpacity={0.7}>
           <Ionicons name="refresh-outline" size={22} color="#fff" />
         </TouchableOpacity>
@@ -557,23 +554,33 @@ export default function MessagesScreen() {
           {messages.length <= 2 && !loading && (
             <View style={styles.quickRepliesContainer}>
               <Text style={styles.quickRepliesTitle}>💡 Gợi ý nhanh cho bạn</Text>
-              <ScrollView 
-                horizontal 
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.quickRepliesScroll}
-              >
-                {QUICK_REPLIES.map((reply, index) => (
+              {QUICK_REPLIES.slice(0, 2).map((reply, index) => (
+                <TouchableOpacity
+                  key={index}
+                  onPress={() => handleQuickReply(reply)}
+                  activeOpacity={0.7}
+                  style={styles.quickReplyCard}
+                >
+                  <View style={styles.quickReplyIconContainer}>
+                    <Ionicons name={reply.icon as any} size={24} color={colors.primary} />
+                  </View>
+                  <Text style={styles.quickReplyText}>{reply.text}</Text>
+                  <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+                </TouchableOpacity>
+              ))}
+              <View style={styles.quickRepliesRow}>
+                {QUICK_REPLIES.slice(2).map((reply, index) => (
                   <TouchableOpacity
-                    key={index}
+                    key={index + 2}
                     onPress={() => handleQuickReply(reply)}
                     activeOpacity={0.7}
-                    style={styles.quickReplyButton}
+                    style={styles.quickReplySmallCard}
                   >
-                    <Ionicons name={reply.icon as any} size={18} color={colors.primary} />
-                    <Text style={styles.quickReplyText}>{reply.text}</Text>
+                    <Ionicons name={reply.icon as any} size={20} color={colors.primary} />
+                    <Text style={styles.quickReplySmallText} numberOfLines={2}>{reply.text}</Text>
                   </TouchableOpacity>
                 ))}
-              </ScrollView>
+              </View>
             </View>
           )}
         </ScrollView>
@@ -647,42 +654,32 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F5F7FA',
   },
-  customHeader: {
-    backgroundColor: '#10b981',
-    paddingBottom: 16,
+  header: {
+    backgroundColor: colors.primary,
+    paddingTop: 50,
+    paddingBottom: spacing.md,
+    paddingHorizontal: spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'flex-start',
+    padding: spacing.sm,
   },
-  customHeaderTitle: {
+  title: {
     fontSize: 20,
     fontWeight: '700',
     color: '#fff',
+    letterSpacing: 0.3,
     flex: 1,
     textAlign: 'center',
     marginRight: -40,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    backgroundColor: colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '700',
-    color: colors.text,
+    color: '#fff',
+    letterSpacing: 0.3,
   },
   clearButton: {
     padding: spacing.sm,
@@ -709,17 +706,20 @@ const styles = StyleSheet.create({
   },
   messageBubble: {
     padding: spacing.md,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.xl,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
   },
   userBubble: {
     backgroundColor: colors.primary,
-    borderBottomRightRadius: 4,
+    borderBottomRightRadius: 6,
   },
   aiBubble: {
-    backgroundColor: colors.surface,
-    borderBottomLeftRadius: 4,
-    borderWidth: 1,
-    borderColor: colors.border,
+    backgroundColor: '#fff',
+    borderBottomLeftRadius: 6,
   },
   imageContainer: {
     marginBottom: spacing.sm,
@@ -868,39 +868,69 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   quickRepliesTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.textSecondary,
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.text,
     marginBottom: spacing.md,
-    paddingHorizontal: spacing.xs,
   },
-  quickRepliesScroll: {
-    paddingHorizontal: spacing.xs,
-    gap: spacing.sm,
-  },
-  quickReplyButton: {
+  quickReplyCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    backgroundColor: colors.surface,
-    paddingHorizontal: spacing.md + 2,
-    paddingVertical: spacing.sm + 4,
-    borderRadius: borderRadius.full,
-    borderWidth: 1,
-    borderColor: colors.primary,
-    marginRight: spacing.sm,
+    backgroundColor: '#fff',
+    padding: spacing.md,
+    borderRadius: borderRadius.lg,
+    marginBottom: spacing.sm,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
+    gap: spacing.md,
+  },
+  quickReplyIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: borderRadius.lg,
+    backgroundColor: colors.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   quickReplyText: {
-    fontSize: 13,
-    color: colors.primary,
+    flex: 1,
+    fontSize: 14,
+    color: colors.text,
     fontWeight: '600',
   },
+  quickRepliesRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  quickReplySmallCard: {
+    flex: 1,
+    backgroundColor: '#fff',
+    padding: spacing.md,
+    borderRadius: borderRadius.lg,
+    alignItems: 'center',
+    gap: spacing.xs,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  quickReplySmallText: {
+    fontSize: 11,
+    color: colors.text,
+    fontWeight: '600',
+    textAlign: 'center',
+    lineHeight: 14,
+  },
   inputWrapper: {
-    backgroundColor: colors.surface,
+    backgroundColor: '#fff',
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: '#E5E7EB',
     paddingTop: spacing.md,
-    paddingBottom: Platform.OS === 'ios' ? 0 : spacing.md,
+    paddingBottom: Platform.OS === 'ios' ? spacing.lg : spacing.md,
     paddingHorizontal: spacing.md,
   },
   inputContainer: {
@@ -909,23 +939,20 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   iconButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.lg,
     backgroundColor: colors.primaryLight,
     justifyContent: 'center',
     alignItems: 'center',
   },
   iconButtonDisabled: {
-    opacity: 0.4,
-    backgroundColor: colors.border,
+    opacity: 0.3,
   },
   inputBox: {
     flex: 1,
-    backgroundColor: colors.background,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
+    backgroundColor: '#F3F4F6',
+    borderRadius: borderRadius.xl,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   },
@@ -936,14 +963,14 @@ const styles = StyleSheet.create({
     minHeight: 40,
   },
   sendButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.lg,
     backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
   sendButtonDisabled: {
-    backgroundColor: colors.border,
+    backgroundColor: '#D1D5DB',
   },
 });

@@ -9,8 +9,9 @@ import {
   Modal,
   TextInput,
   Alert,
+  StatusBar,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, isSameMonth } from 'date-fns';
 import { vi } from 'date-fns/locale';
@@ -96,6 +97,7 @@ const SAMPLE_EVENTS: CalendarEvent[] = [
 ];
 
 export default function CalendarScreen() {
+  const navigation = useNavigation();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [events, setEvents] = useState<CalendarEvent[]>(SAMPLE_EVENTS);
@@ -540,19 +542,25 @@ export default function CalendarScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
       {/* Header */}
       <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="#fff" />
+        </TouchableOpacity>
+        <Text style={styles.title}>Lịch sức khỏe</Text>
+        <View style={styles.headerSpacer} />
+      </View>
+
+      {/* Month Navigation */}
+      <View style={styles.monthNav}>
         <TouchableOpacity onPress={handlePreviousMonth} style={styles.monthButton}>
           <Ionicons name="chevron-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        
-        <View style={styles.headerCenter}>
-          <Text style={styles.monthTitle}>
-            {format(currentDate, 'MMMM yyyy', { locale: vi })}
-          </Text>
-        </View>
-        
+        <Text style={styles.monthTitle}>
+          {format(currentDate, 'MMMM yyyy', { locale: vi })}
+        </Text>
         <TouchableOpacity onPress={handleNextMonth} style={styles.monthButton}>
           <Ionicons name="chevron-forward" size={24} color={colors.text} />
         </TouchableOpacity>
@@ -577,7 +585,7 @@ export default function CalendarScreen() {
       {/* Modals */}
       {renderAddEventModal()}
       {renderEventDetailModal()}
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -587,6 +595,30 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   header: {
+    backgroundColor: colors.primary,
+    paddingTop: 40,
+    paddingBottom: spacing.sm,
+    paddingHorizontal: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  backButton: {
+    padding: spacing.sm,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#fff',
+    letterSpacing: 0.3,
+    flex: 1,
+    textAlign: 'center',
+    marginRight: -40,
+  },
+  headerSpacer: {
+    width: 40,
+  },
+  monthNav: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -597,10 +629,6 @@ const styles = StyleSheet.create({
   },
   monthButton: {
     padding: spacing.sm,
-  },
-  headerCenter: {
-    flex: 1,
-    alignItems: 'center',
   },
   monthTitle: {
     fontSize: 18,
