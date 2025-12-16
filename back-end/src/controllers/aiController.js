@@ -18,30 +18,84 @@ export const recognizeFood = async (req, res) => {
       return res.status(400).json({ error: 'Missing base64Image' });
     }
 
-    const prompt = `Bạn là chuyên gia dinh dưỡng. Phân tích ảnh này và tính toán CHÍNH XÁC:
+    const prompt = `BẠN LÀ CHUYÊN GIA DINH DƯỠNG CHUYÊN NGHIỆP. Nhiệm vụ: phân tích ảnh và tính toán dinh dưỡng CHÍNH XÁC TUYỆT ĐỐI.
 
-Bước 1: Nhận diện món ăn
-Bước 2: Ước lượng KHỐI LƯỢNG từ ảnh (dựa vào kích thước, đĩa/bát/gói)
-Bước 3: Tính dinh dưỡng DỰA TRÊN KHỐI LƯỢNG ƯỚC TÍNH
+🔍 QUY TRÌNH PHÂN TÍCH (BẮT BUỘC):
 
-Ví dụ thực tế:
-- 1 gói mì ăn liền (85g): 380 calo, 10g protein, 55g carbs, 14g fat
-- 1 bát phở (500g): 450 calo, 25g protein, 65g carbs, 8g fat  
-- 1 đĩa cơm gà (350g): 580 calo, 35g protein, 70g carbs, 15g fat
-- Salad trộn (200g): 150 calo, 5g protein, 12g carbs, 8g fat
+1. NHẬN DIỆN:
+   - Xác định món ăn cụ thể
+   - Nhận biết nguyên liệu chính (thịt, rau, carb, dầu mỡ...)
+   - Phương pháp chế biến (chiên, luộc, nướng, xào...)
 
-Trả về JSON (TIẾNG VIỆT, tên ngắn 4-5 từ):
+2. ƯỚC LƯỢNG KHỐI LƯỢNG:
+   - So sánh với đối tượng tham chiếu (tay, đĩa, gói, bát...)
+   - Gói mì instant: thường 75-85g
+   - Bát cơm nhỏ: ~150g, bát to: ~250g
+   - Đĩa cơm: 200-350g
+   - Bát phở/bún: 400-600g
+   - Ly/cốc: 200-300ml
+
+3. TÍNH TOÁN DINH DƯỠNG (DỰA TRÊN CƠ SỞ DỮ LIỆU THỰC TẾ):
+
+📊 BẢNG THAM KHẢO CHUẨN (100g):
+CARB:
+- Cơm trắng: 130 kcal, 3g protein, 28g carbs, 0g fat
+- Mì khô: 380 kcal, 13g protein, 75g carbs, 2g fat
+- Mì instant (có dầu): 450 kcal, 10g protein, 60g carbs, 18g fat
+- Phở khô: 360 kcal, 12g protein, 73g carbs, 1g fat
+- Bánh mì: 265 kcal, 9g protein, 49g carbs, 3g fat
+
+PROTEIN:
+- Thịt gà luộc: 165 kcal, 31g protein, 0g carbs, 4g fat
+- Thịt gà chiên: 246 kcal, 30g protein, 10g carbs, 10g fat
+- Thịt bò xào: 250 kcal, 26g protein, 0g carbs, 15g fat
+- Thịt heo nạc: 242 kcal, 27g protein, 0g carbs, 14g fat
+- Cá hồi: 206 kcal, 22g protein, 0g carbs, 13g fat
+- Trứng: 155 kcal, 13g protein, 1g carbs, 11g fat
+
+RAU CỦ:
+- Rau xanh: 20-30 kcal, 2g protein, 4g carbs, 0g fat
+- Khoai lang: 86 kcal, 2g protein, 20g carbs, 0g fat
+
+DẦU/NƯỚC SỐT:
+- Dầu ăn (10ml): 90 kcal, 0g protein, 0g carbs, 10g fat
+- Nước sốt đậm đặc (20g): 30-50 kcal
+
+📝 CÔNG THỨC TÍNH:
+- Tổng calo = Σ (khối lượng nguyên liệu × calo/100g)
+- Tổng protein = Σ (khối lượng nguyên liệu × protein/100g)
+- Tổng carbs = Σ (khối lượng nguyên liệu × carbs/100g)
+- Tổng fat = Σ (khối lượng nguyên liệu × fat/100g)
+
+⚠️ LƯU Ý ĐẶC BIỆT:
+- Món CHIÊN/RÁN: +20-30% calo do hấp thụ dầu
+- Món XÀO: +10-15% calo do dầu
+- Có NƯỚC SỐT đậm: +50-100 kcal
+- Có PHÔ MAI: +50-80 kcal/lát
+
+🎯 VÍ DỤ TÍNH TOÁN CHI TIẾT:
+Mì gói Omachi (85g) + nước sốt (15g):
+- Mì khô: 85g × 4.5 = 383 kcal
+- Gói gia vị/dầu: +50 kcal
+→ TỔNG: ~433 kcal, 10g protein, 56g carbs, 16g fat
+
+Cơm gà (250g cơm + 100g gà):
+- Cơm: 250g × 1.3 = 325 kcal, 8g protein, 70g carbs
+- Gà chiên: 100g × 2.46 = 246 kcal, 30g protein, 10g fat
+→ TỔNG: 571 kcal, 38g protein, 70g carbs, 10g fat
+
+Trả về JSON (tên TIẾNG VIỆT ngắn gọn):
 {
   "food_name": "...",
   "portion_size": "...",
-  "calories": <số integer>,
-  "protein": <số integer>,
-  "carbs": <số integer>,
-  "fats": <số integer>,
-  "sugar": <số integer>
+  "calories": <integer>,
+  "protein": <integer>,
+  "carbs": <integer>,
+  "fats": <integer>,
+  "sugar": <integer ước tính>
 }
 
-CHÚ Ý: Phải PHÂN TÍCH ẢNH để ước lượng khối lượng, rồi tính toán chính xác. Món ăn khác nhau có dinh dưỡng KHÁC NHAU hoàn toàn.`;
+✅ YÊU CẦU: Phải tính toán CỤ THỂ từng thành phần, KHÔNG được đoán mò hay dùng số tròn đại khái!`;
 
     // Extract base64 data from data URI
     const base64Data = base64Image.includes('base64,') 
@@ -229,30 +283,84 @@ export const recognizeAndSaveFood = async (req, res) => {
       return res.status(400).json({ error: 'Missing base64Image' });
     }
 
-    const prompt = `Bạn là chuyên gia dinh dưỡng. Phân tích ảnh này và tính toán CHÍNH XÁC:
+    const prompt = `BẠN LÀ CHUYÊN GIA DINH DƯỠNG CHUYÊN NGHIỆP. Nhiệm vụ: phân tích ảnh và tính toán dinh dưỡng CHÍNH XÁC TUYỆT ĐỐI.
 
-Bước 1: Nhận diện món ăn
-Bước 2: Ước lượng KHỐI LƯỢNG từ ảnh (dựa vào kích thước, đĩa/bát/gói)
-Bước 3: Tính dinh dưỡng DỰA TRÊN KHỐI LƯỢNG ƯỚC TÍNH
+🔍 QUY TRÌNH PHÂN TÍCH (BẮT BUỘC):
 
-Ví dụ thực tế:
-- 1 gói mì ăn liền (85g): 380 calo, 10g protein, 55g carbs, 14g fat
-- 1 bát phở (500g): 450 calo, 25g protein, 65g carbs, 8g fat  
-- 1 đĩa cơm gà (350g): 580 calo, 35g protein, 70g carbs, 15g fat
-- Salad trộn (200g): 150 calo, 5g protein, 12g carbs, 8g fat
+1. NHẬN DIỆN:
+   - Xác định món ăn cụ thể
+   - Nhận biết nguyên liệu chính (thịt, rau, carb, dầu mỡ...)
+   - Phương pháp chế biến (chiên, luộc, nướng, xào...)
 
-Trả về JSON (TIẾNG VIỆT, tên ngắn 4-5 từ):
+2. ƯỚC LƯỢNG KHỐI LƯỢNG:
+   - So sánh với đối tượng tham chiếu (tay, đĩa, gói, bát...)
+   - Gói mì instant: thường 75-85g
+   - Bát cơm nhỏ: ~150g, bát to: ~250g
+   - Đĩa cơm: 200-350g
+   - Bát phở/bún: 400-600g
+   - Ly/cốc: 200-300ml
+
+3. TÍNH TOÁN DINH DƯỠNG (DỰA TRÊN CƠ SỞ DỮ LIỆU THỰC TẾ):
+
+📊 BẢNG THAM KHẢO CHUẨN (100g):
+CARB:
+- Cơm trắng: 130 kcal, 3g protein, 28g carbs, 0g fat
+- Mì khô: 380 kcal, 13g protein, 75g carbs, 2g fat
+- Mì instant (có dầu): 450 kcal, 10g protein, 60g carbs, 18g fat
+- Phở khô: 360 kcal, 12g protein, 73g carbs, 1g fat
+- Bánh mì: 265 kcal, 9g protein, 49g carbs, 3g fat
+
+PROTEIN:
+- Thịt gà luộc: 165 kcal, 31g protein, 0g carbs, 4g fat
+- Thịt gà chiên: 246 kcal, 30g protein, 10g carbs, 10g fat
+- Thịt bò xào: 250 kcal, 26g protein, 0g carbs, 15g fat
+- Thịt heo nạc: 242 kcal, 27g protein, 0g carbs, 14g fat
+- Cá hồi: 206 kcal, 22g protein, 0g carbs, 13g fat
+- Trứng: 155 kcal, 13g protein, 1g carbs, 11g fat
+
+RAU CỦ:
+- Rau xanh: 20-30 kcal, 2g protein, 4g carbs, 0g fat
+- Khoai lang: 86 kcal, 2g protein, 20g carbs, 0g fat
+
+DẦU/NƯỚC SỐT:
+- Dầu ăn (10ml): 90 kcal, 0g protein, 0g carbs, 10g fat
+- Nước sốt đậm đặc (20g): 30-50 kcal
+
+📝 CÔNG THỨC TÍNH:
+- Tổng calo = Σ (khối lượng nguyên liệu × calo/100g)
+- Tổng protein = Σ (khối lượng nguyên liệu × protein/100g)
+- Tổng carbs = Σ (khối lượng nguyên liệu × carbs/100g)
+- Tổng fat = Σ (khối lượng nguyên liệu × fat/100g)
+
+⚠️ LƯU Ý ĐẶC BIỆT:
+- Món CHIÊN/RÁN: +20-30% calo do hấp thụ dầu
+- Món XÀO: +10-15% calo do dầu
+- Có NƯỚC SỐT đậm: +50-100 kcal
+- Có PHÔ MAI: +50-80 kcal/lát
+
+🎯 VÍ DỤ TÍNH TOÁN CHI TIẾT:
+Mì gói Omachi (85g) + nước sốt (15g):
+- Mì khô: 85g × 4.5 = 383 kcal
+- Gói gia vị/dầu: +50 kcal
+→ TỔNG: ~433 kcal, 10g protein, 56g carbs, 16g fat
+
+Cơm gà (250g cơm + 100g gà):
+- Cơm: 250g × 1.3 = 325 kcal, 8g protein, 70g carbs
+- Gà chiên: 100g × 2.46 = 246 kcal, 30g protein, 10g fat
+→ TỔNG: 571 kcal, 38g protein, 70g carbs, 10g fat
+
+Trả về JSON (tên TIẾNG VIỆT ngắn gọn):
 {
   "food_name": "...",
   "portion_size": "...",
-  "calories": <số integer>,
-  "protein": <số integer>,
-  "carbs": <số integer>,
-  "fats": <số integer>,
-  "sugar": <số integer>
+  "calories": <integer>,
+  "protein": <integer>,
+  "carbs": <integer>,
+  "fats": <integer>,
+  "sugar": <integer ước tính>
 }
 
-CHÚ Ý: Phải PHÂN TÍCH ẢNH để ước lượng khối lượng, rồi tính toán chính xác. Món ăn khác nhau có dinh dưỡng KHÁC NHAU hoàn toàn.`;
+✅ YÊU CẦU: Phải tính toán CỤ THỂ từng thành phần, KHÔNG được đoán mò hay dùng số tròn đại khái!`;
 
     // Extract base64 data from data URI
     const base64Data = base64Image.includes('base64,') 
