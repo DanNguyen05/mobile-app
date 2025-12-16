@@ -17,6 +17,9 @@ import calendarRoutes from './routes/calendar.js';
 const app = express();
 const PORT = config.port;
 
+// Trust proxy for Railway/production (needed for rate limiting behind reverse proxy)
+app.set('trust proxy', 1);
+
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
