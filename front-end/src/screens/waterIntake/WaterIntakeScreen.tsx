@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,9 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, spacing, borderRadius } from '../../context/ThemeContext';
+import { useAuth } from '../../context/AuthContext';
 
 const GLASS_SIZES = [
   { id: '1', name: 'Nhỏ', amount: 150, icon: 'wine' },
@@ -20,15 +22,61 @@ const GLASS_SIZES = [
 
 export default function WaterIntakeScreen() {
   const navigation = useNavigation();
-  const [waterIntake, setWaterIntake] = useState(1250); // ml
+  const { user } = useAuth();
+  const [waterIntake, setWaterIntake] = useState(0); // ml
   const [dailyGoal] = useState(2500); // ml
-  const [history, setHistory] = useState<{ time: string; amount: number }[]>([
-    { time: '08:30', amount: 250 },
-    { time: '10:15', amount: 350 },
-    { time: '12:00', amount: 250 },
-    { time: '14:30', amount: 250 },
-    { time: '16:00', amount: 150 },
-  ]);
+  const [history, setHistory] = useState<{ time: string; amount: number }[]>([]);
+
+  // Load data from AsyncStorage
+  useEffect(() => {
+    if (user?.id) {
+      loadWaterData();
+    }
+  }, [user?.id]);
+
+  const loadWaterData = async () => {
+    try {
+      if (!user?.id) return;
+      
+      const today = new Date().toDateString();
+      const dateKey = `waterDate_${user.id}`;
+      const intakeKey = `waterIntake_${user.id}`;
+      const historyKey = `waterHistory_${user.id}`;
+      
+      const savedDate = await AsyncStorage.getItem(dateKey);
+      
+      // Reset if it's a new day
+      if (savedDate !== today) {
+        await AsyncStorage.setItem(dateKey, today);
+        await AsyncStorage.setItem(intakeKey, '0');
+        await AsyncStorage.setItem(historyKey, '[]');
+        setWaterIntake(0);
+        setHistory([]);
+      } else {
+        const savedIntake = await AsyncStorage.getItem(intakeKey);
+        const savedHistory = await AsyncStorage.getItem(historyKey);
+        
+        if (savedIntake) setWaterIntake(parseInt(savedIntake));
+        if (savedHistory) setHistory(JSON.parse(savedHistory));
+      }
+    } catch (error) {
+      console.error('Error loading water data:', error);
+    }
+  };
+
+  const saveWaterData = async (intake: number, hist: { time: string; amount: number }[]) => {
+    try {
+      if (!user?.id) return;
+      
+      const intakeKey = `waterIntake_${user.id}`;
+      const historyKey = `waterHistory_${user.id}`;
+      
+      await AsyncStorage.setItem(intakeKey, intake.toString());
+      await AsyncStorage.setItem(historyKey, JSON.stringify(hist));
+    } catch (error) {
+      console.error('Error saving water data:', error);
+    }
+  };
 
   const progress = Math.min((waterIntake / dailyGoal) * 100, 100);
   const remaining = Math.max(dailyGoal - waterIntake, 0);
@@ -36,15 +84,23 @@ export default function WaterIntakeScreen() {
   const addWater = (amount: number) => {
     const now = new Date();
     const time = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-    setWaterIntake(prev => Math.min(prev + amount, dailyGoal));
-    setHistory(prev => [{ time, amount }, ...prev]);
+    const newIntake = Math.min(waterIntake + amount, dailyGoal);
+    const newHistory = [{ time, amount }, ...history];
+    
+    setWaterIntake(newIntake);
+    setHistory(newHistory);
+    saveWaterData(newIntake, newHistory);
   };
 
   const removeLastIntake = () => {
     if (history.length > 0) {
       const lastIntake = history[0];
-      setWaterIntake(prev => Math.max(prev - lastIntake.amount, 0));
-      setHistory(prev => prev.slice(1));
+      const newIntake = Math.max(waterIntake - lastIntake.amount, 0);
+      const newHistory = history.slice(1);
+      
+      setWaterIntake(newIntake);
+      setHistory(newHistory);
+      saveWaterData(newIntake, newHistory);
     }
   };
 

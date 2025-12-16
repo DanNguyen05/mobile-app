@@ -248,19 +248,15 @@ export default function DashboardScreen() {
     }
   }, [today]);
 
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      await fetchData();
-      setLoading(false);
-    };
-    load();
-  }, [fetchData]);
-
   // Refresh data when screen comes into focus
   useFocusEffect(
     useCallback(() => {
-      fetchData();
+      const load = async () => {
+        setLoading(true);
+        await fetchData();
+        setLoading(false);
+      };
+      load();
     }, [fetchData])
   );
 

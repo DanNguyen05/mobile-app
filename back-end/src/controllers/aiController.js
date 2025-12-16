@@ -84,7 +84,20 @@ Cơm gà (250g cơm + 100g gà):
 - Gà chiên: 100g × 2.46 = 246 kcal, 30g protein, 10g fat
 → TỔNG: 571 kcal, 38g protein, 70g carbs, 10g fat
 
-Trả về JSON (tên TIẾNG VIỆT ngắn gọn):
+⚠️ QUAN TRỌNG: CHỈ TRẢ VỀ JSON, KHÔNG CÓ VĂN BẢN GIẢI THÍCH!
+
+VÍ DỤ OUTPUT ĐÚNG:
+{
+  "food_name": "Phở bò",
+  "portion_size": "1 tô (550g)",
+  "calories": 485,
+  "protein": 32,
+  "carbs": 68,
+  "fats": 8,
+  "sugar": 4
+}
+
+Format JSON yêu cầu (tên TIẾNG VIỆT ngắn gọn):
 {
   "food_name": "...",
   "portion_size": "...",
@@ -92,10 +105,10 @@ Trả về JSON (tên TIẾNG VIỆT ngắn gọn):
   "protein": <integer>,
   "carbs": <integer>,
   "fats": <integer>,
-  "sugar": <integer ước tính>
+  "sugar": <integer>
 }
 
-✅ YÊU CẦU: Phải tính toán CỤ THỂ từng thành phần, KHÔNG được đoán mò hay dùng số tròn đại khái!`;
+✅ CHỈ TRẢ VỀ JSON NHƯ VÍ DỤ TRÊN, KHÔNG GIẢI THÍCH!`;
 
     // Extract base64 data from data URI
     const base64Data = base64Image.includes('base64,') 
@@ -123,7 +136,7 @@ Trả về JSON (tên TIẾNG VIỆT ngắn gọn):
           temperature: 0.1,
           topP: 0.9,
           topK: 40,
-          maxOutputTokens: 1000
+          maxOutputTokens: 2000
         }
       }),
     });
@@ -280,7 +293,7 @@ export const recognizeAndSaveFood = async (req, res) => {
     const { base64Image, overrideName, overrideAmount, mealType, eatenAt } = req.body;
     
     if (!base64Image) {
-      return res.status(400).json({ error: 'Missing base64Image' });
+      return res.status(400).json({ error: 'Thiếu ảnh để nhận diện' });
     }
 
     const prompt = `BẠN LÀ CHUYÊN GIA DINH DƯỠNG CHUYÊN NGHIỆP. Nhiệm vụ: phân tích ảnh và tính toán dinh dưỡng CHÍNH XÁC TUYỆT ĐỐI.
@@ -349,7 +362,20 @@ Cơm gà (250g cơm + 100g gà):
 - Gà chiên: 100g × 2.46 = 246 kcal, 30g protein, 10g fat
 → TỔNG: 571 kcal, 38g protein, 70g carbs, 10g fat
 
-Trả về JSON (tên TIẾNG VIỆT ngắn gọn):
+⚠️ QUAN TRỌNG: CHỈ TRẢ VỀ JSON, KHÔNG CÓ VĂN BẢN GIẢI THÍCH!
+
+VÍ DỤ OUTPUT ĐÚNG:
+{
+  "food_name": "Phở bò",
+  "portion_size": "1 tô (550g)",
+  "calories": 485,
+  "protein": 32,
+  "carbs": 68,
+  "fats": 8,
+  "sugar": 4
+}
+
+Format JSON yêu cầu (tên TIẾNG VIỆT ngắn gọn):
 {
   "food_name": "...",
   "portion_size": "...",
@@ -357,10 +383,10 @@ Trả về JSON (tên TIẾNG VIỆT ngắn gọn):
   "protein": <integer>,
   "carbs": <integer>,
   "fats": <integer>,
-  "sugar": <integer ước tính>
+  "sugar": <integer>
 }
 
-✅ YÊU CẦU: Phải tính toán CỤ THỂ từng thành phần, KHÔNG được đoán mò hay dùng số tròn đại khái!`;
+✅ CHỈ TRẢ VỀ JSON NHƯ VÍ DỤ TRÊN, KHÔNG GIẢI THÍCH!`;
 
     // Extract base64 data from data URI
     const base64Data = base64Image.includes('base64,') 
@@ -388,7 +414,7 @@ Trả về JSON (tên TIẾNG VIỆT ngắn gọn):
           temperature: 0.1,
           topP: 0.9,
           topK: 40,
-          maxOutputTokens: 1000
+          maxOutputTokens: 2000
         }
       }),
     });
@@ -403,18 +429,20 @@ Trả về JSON (tên TIẾNG VIỆT ngắn gọn):
     const data = await response.json();
     let content = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
-    console.log('Gemini raw response:', content);
+    console.log('🔍 Gemini raw response:', content);
 
     // Clean up the response - remove markdown code blocks
     content = content.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
     
     // Check if response was cut off (incomplete) - try to auto-complete
     if (!content.includes('}') || content.split('{').length !== content.split('}').length) {
-      console.log('Incomplete JSON, attempting to complete:', content);
+      console.log('⚠️ JSON incomplete, attempting to complete...');
       
       // Try to extract partial food name
       const nameMatch = content.match(/"food_name"\s*:\s*"([^"]*)/);
       const partialName = nameMatch ? nameMatch[1] : 'Món ăn';
+      
+      console.log('📝 Extracted food name:', partialName);
       
       // Auto-complete JSON with Vietnamese food defaults
       content = `{
@@ -426,13 +454,13 @@ Trả về JSON (tên TIẾNG VIỆT ngắn gọn):
   "fats": 10,
   "sugar": 3
 }`;
-      console.log('Auto-completed JSON:', content);
+      console.log('✅ Auto-completed JSON:', content);
     }
     
     // Try to find JSON object
     let jsonMatch = content.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      console.error('No valid JSON found in:', content);
+      console.error('❌ No valid JSON found in:', content);
       
       // Fallback: return default values
       return res.json({
@@ -471,8 +499,9 @@ Trả về JSON (tên TIẾNG VIỆT ngắn gọn):
       
       jsonString = jsonString.replace(/,(\s*})/g, '$1');
       
-      console.log('Parsed JSON string:', jsonString);
+      console.log('📊 Parsed JSON string:', jsonString);
       nutritionData = JSON.parse(jsonString);
+      console.log('✅ Nutrition data:', nutritionData);
     } catch (parseError) {
       console.error('Parse error:', parseError.message);
       
@@ -492,6 +521,7 @@ Trả về JSON (tên TIẾNG VIỆT ngắn gọn):
     }
 
     // Prepare food data
+    console.log('🍱 Preparing food data from:', nutritionData);
     const foodData = {
       foodName: nutritionData.food_name || nutritionData.foodName || 'Món ăn không xác định',
       amount: nutritionData.portion_size || nutritionData.portionSize || overrideAmount || '100g',
@@ -501,6 +531,7 @@ Trả về JSON (tên TIẾNG VIỆT ngắn gọn):
       fat: Math.round(parseFloat(nutritionData.fats || nutritionData.fat) || 0),
       sugar: Math.round(parseFloat(nutritionData.sugar) || 0),
     };
+    console.log('✨ Final foodData:', foodData);
 
     // Save to food log
     const created = await prisma.foodLog.create({

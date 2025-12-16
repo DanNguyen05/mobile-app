@@ -82,19 +82,15 @@ export default function FoodDiaryScreen() {
     }
   }, [today]);
 
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      await fetchFoodLogs();
-      setLoading(false);
-    };
-    load();
-  }, [fetchFoodLogs]);
-
   // Refresh data when screen comes into focus
   useFocusEffect(
     useCallback(() => {
-      fetchFoodLogs();
+      const load = async () => {
+        setLoading(true);
+        await fetchFoodLogs();
+        setLoading(false);
+      };
+      load();
     }, [fetchFoodLogs])
   );
 
@@ -453,7 +449,7 @@ export default function FoodDiaryScreen() {
                 <View style={styles.aiResultBanner}>
                   <Ionicons name="sparkles" size={20} color={colors.primary} />
                   <Text style={styles.aiResultText}>
-                    AI phát hiện: {aiResult.foodName} ({aiResult.confidence}% chắc chắn)
+                    AI phát hiện: {aiResult.foodName}
                   </Text>
                 </View>
               )}

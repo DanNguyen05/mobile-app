@@ -5,13 +5,14 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  TextInput,
-  Modal,
+  ActivityIndicator,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { colors, spacing, borderRadius } from '../../context/ThemeContext';
+import { useAuth } from '../../context/AuthContext';
+import { api } from '../../services/api';
 
 interface Goal {
   id: string;
@@ -25,64 +26,131 @@ interface Goal {
 
 export default function GoalsScreen() {
   const navigation = useNavigation();
-  const [goals, setGoals] = useState<Goal[]>([
-    {
-      id: '1',
-      title: 'Cân nặng mục tiêu',
-      current: 70,
-      target: 65,
-      unit: 'kg',
-      icon: 'scale-outline',
-      color: '#FF6B6B',
-    },
-    {
-      id: '2',
-      title: 'Calories mỗi ngày',
-      current: 1800,
-      target: 2000,
-      unit: 'kcal',
-      icon: 'flame-outline',
-      color: '#4ECDC4',
-    },
-    {
-      id: '3',
-      title: 'Bước chân',
-      current: 6500,
-      target: 10000,
-      unit: 'bước',
-      icon: 'footsteps-outline',
-      color: '#95E1D3',
-    },
-    {
-      id: '4',
-      title: 'Nước uống',
-      current: 1.5,
-      target: 2.5,
-      unit: 'lít',
-      icon: 'water-outline',
-      color: '#45B7D1',
-    },
-  ]);
+  const { user: authUser } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
+  const [goals, setGoals] = useState<Goal[]>([]);
 
-  const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
-  const [showEditModal, setShowEditModal] = useState(false);
+  // Reload data when screen is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      loadUserData();
+    }, [])
+  );
+
+  const loadUserData = async () => {
+    try {
+      setLoading(true);
+      const userData = await api.getCurrentUser();
+      setUser(userData);
+      
+      // Calculate TDEE and goals
+      const weight = userData.weightKg || 70;
+      const height = userData.heightCm || 170;
+      const age = userData.age || 30;
+      const gender = userData.gender?.toLowerCase() || 'male';
+      const activityLevel = userData.activityLevel || 'moderately_active';
+
+      // Calculate BMR
+      let bmr: number;
+      if (gender === 'male') {
+        bmr = 10 * weight + 6.25 * height - 5 * age + 5;
+      } else {
+        bmr = 10 * weight + 6.25 * height - 5 * age - 161;
+      }
+
+      // Calculate TDEE based on activity level
+      const activityMultipliers: Record<string, number> = {
+        sedentary: 1.2,
+        lightly_active: 1.375,
+        moderately_active: 1.55,
+        very_active: 1.725,
+        extra_active: 1.9,
+      };
+      const tdee = Math.round(bmr * (activityMultipliers[activityLevel] || 1.55));
+
+      // Adjust TDEE based on goal
+      let targetCalories = tdee;
+      let targetWeight = weight;
+      
+      if (userData.goal === 'lose_weight' || userData.goal === 'weight_loss') {
+        targetCalories = tdee - 500; // 500 kcal deficit
+        targetWeight = weight - 5; // Target to lose 5kg
+      } else if (userData.goal === 'gain_weight' || userData.goal === 'muscle_gain') {
+        targetCalories = tdee + 300; // 300 kcal surplus
+        targetWeight = weight + 5; // Target to gain 5kg
+      }
+
+      // Today's intake (would need to fetch from food logs)
+      const todayIntake = 0; // Placeholder
+
+      setGoals([
+        {
+          id: '1',
+          title: 'Cân nặng mục tiêu',
+          current: weight,
+          target: targetWeight,
+          unit: 'kg',
+          icon: 'scale-outline',
+          color: '#FF6B6B',
+        },
+        {
+          id: '2',
+          title: 'Calories mỗi ngày',
+          current: todayIntake,
+          target: targetCalories,
+          unit: 'kcal',
+          icon: 'flame-outline',
+          color: '#4ECDC4',
+        },
+        {
+          id: '3',
+          title: 'Protein',
+          current: 0,
+          target: Math.round(targetCalories * 0.3 / 4), // 30% of calories from protein
+          unit: 'g',
+          icon: 'fish-outline',
+          color: '#95E1D3',
+        },
+        {
+          id: '4',
+          title: 'Nước uống',
+          current: 0,
+          target: 2.5,
+          unit: 'lít',
+          icon: 'water-outline',
+          color: '#45B7D1',
+        },
+      ]);
+    } catch (error) {
+      console.error('Failed to load user data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getProgress = (current: number, target: number) => {
     return Math.min((current / target) * 100, 100);
   };
 
-  const handleEditGoal = (goal: Goal) => {
-    setEditingGoal(goal);
-    setShowEditModal(true);
-  };
-
-  const handleSaveGoal = () => {
-    if (editingGoal) {
-      setGoals(goals.map(g => g.id === editingGoal.id ? editingGoal : g));
-      setShowEditModal(false);
-      setEditingGoal(null);
-    }
-  };
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <StatusBar style="light" />
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Mục tiêu</Text>
+          <View style={styles.headerRight} />
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={styles.loadingText}>Đang tải...</Text>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -113,12 +181,7 @@ export default function GoalsScreen() {
         {goals.map((goal) => {
           const progress = getProgress(goal.current, goal.target);
           return (
-            <TouchableOpacity
-              key={goal.id}
-              style={styles.goalCard}
-              onPress={() => handleEditGoal(goal)}
-              activeOpacity={0.7}
-            >
+            <View key={goal.id} style={styles.goalCard}>
               <View style={[styles.goalIcon, { backgroundColor: goal.color + '20' }]}>
                 <Ionicons name={goal.icon} size={28} color={goal.color} />
               </View>
@@ -146,85 +209,21 @@ export default function GoalsScreen() {
                   </View>
                 </View>
               </View>
-
-              <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
-            </TouchableOpacity>
+            </View>
           );
         })}
 
         {/* Tips Card */}
         <View style={styles.tipsCard}>
           <View style={styles.tipsHeader}>
-            <Ionicons name="bulb" size={20} color="#FFA726" />
-            <Text style={styles.tipsTitle}>Mẹo nhỏ</Text>
+            <Ionicons name="information-circle" size={20} color="#4ECDC4" />
+            <Text style={styles.tipsTitle}>Thông tin</Text>
           </View>
           <Text style={styles.tipsText}>
-            Đặt mục tiêu thực tế và theo dõi tiến trình hàng ngày. Thành công đến từ những bước nhỏ kiên trì!
+            Tất cả mục tiêu được tính tự động dựa trên hồ sơ của bạn. Để cập nhật, vui lòng chỉnh sửa thông tin trong mục Cài đặt.
           </Text>
         </View>
       </ScrollView>
-
-      {/* Edit Modal */}
-      <Modal
-        visible={showEditModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowEditModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Cập nhật mục tiêu</Text>
-            
-            {editingGoal && (
-              <>
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Giá trị hiện tại</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={editingGoal.current.toString()}
-                    onChangeText={(text) => setEditingGoal({
-                      ...editingGoal,
-                      current: parseFloat(text) || 0
-                    })}
-                    keyboardType="numeric"
-                    placeholder="Nhập giá trị"
-                  />
-                </View>
-
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Mục tiêu</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={editingGoal.target.toString()}
-                    onChangeText={(text) => setEditingGoal({
-                      ...editingGoal,
-                      target: parseFloat(text) || 0
-                    })}
-                    keyboardType="numeric"
-                    placeholder="Nhập mục tiêu"
-                  />
-                </View>
-
-                <View style={styles.modalActions}>
-                  <TouchableOpacity
-                    style={[styles.modalButton, styles.cancelButton]}
-                    onPress={() => setShowEditModal(false)}
-                  >
-                    <Text style={styles.cancelButtonText}>Hủy</Text>
-                  </TouchableOpacity>
-                  
-                  <TouchableOpacity
-                    style={[styles.modalButton, styles.saveButton]}
-                    onPress={handleSaveGoal}
-                  >
-                    <Text style={styles.saveButtonText}>Lưu</Text>
-                  </TouchableOpacity>
-                </View>
-              </>
-            )}
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 }
@@ -347,7 +346,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.full,
   },
   tipsCard: {
-    backgroundColor: '#FFF3E0',
+    backgroundColor: '#E0F7FA',
     padding: spacing.lg,
     borderRadius: borderRadius.lg,
     marginTop: spacing.md,
@@ -362,79 +361,21 @@ const styles = StyleSheet.create({
   tipsTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#F57C00',
+    color: '#00796B',
   },
   tipsText: {
     fontSize: 14,
-    color: '#E65100',
+    color: '#00695C',
     lineHeight: 20,
   },
-  modalOverlay: {
+  loadingContainer: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: spacing.lg,
   },
-  modalContent: {
-    backgroundColor: '#fff',
-    borderRadius: borderRadius.xl,
-    padding: spacing.xl,
-    width: '100%',
-    maxWidth: 400,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.text,
-    marginBottom: spacing.lg,
-    textAlign: 'center',
-  },
-  inputGroup: {
-    marginBottom: spacing.md,
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: spacing.xs,
-  },
-  input: {
-    backgroundColor: colors.background,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
+  loadingText: {
+    marginTop: spacing.md,
     fontSize: 16,
-    color: colors.text,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  modalActions: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    marginTop: spacing.lg,
-  },
-  modalButton: {
-    flex: 1,
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
-    alignItems: 'center',
-  },
-  cancelButton: {
-    backgroundColor: colors.background,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
-  },
-  saveButton: {
-    backgroundColor: colors.primary,
-  },
-  saveButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#fff',
+    color: colors.textSecondary,
   },
 });

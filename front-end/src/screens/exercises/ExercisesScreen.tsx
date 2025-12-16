@@ -158,7 +158,12 @@ export default function ExercisesScreen() {
   // Refresh data when screen comes into focus
   useFocusEffect(
     useCallback(() => {
-      fetchWorkouts();
+      const load = async () => {
+        setLoading(true);
+        await fetchWorkouts();
+        setLoading(false);
+      };
+      load();
     }, [fetchWorkouts])
   );
 

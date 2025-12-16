@@ -14,7 +14,6 @@ import CalendarScreen from '../screens/calendar/CalendarScreen';
 import HealthInsightsScreen from '../screens/healthInsights/HealthInsightsScreen';
 import ExercisesScreen from '../screens/exercises/ExercisesScreen';
 import MessagesScreen from '../screens/messages/MessagesScreen';
-import GoalsScreen from '../screens/goals/GoalsScreen';
 import WaterIntakeScreen from '../screens/waterIntake/WaterIntakeScreen';
 import MeasurementsScreen from '../screens/measurements/MeasurementsScreen';
 import RemindersScreen from '../screens/reminders/RemindersScreen';
@@ -31,7 +30,6 @@ export type UtilitiesStackParamList = {
   HealthInsights: undefined;
   Exercises: undefined;
   Messages: undefined;
-  Goals: undefined;
   WaterIntake: undefined;
   Measurements: undefined;
   Reminders: undefined;
@@ -118,11 +116,6 @@ export const UtilitiesStackNavigator = () => {
       <Stack.Screen
         name="Messages"
         component={MessagesScreen}
-        options={{ headerShown: false }}
-      />
-      <Stack.Screen
-        name="Goals"
-        component={GoalsScreen}
         options={{ headerShown: false }}
       />
       <Stack.Screen

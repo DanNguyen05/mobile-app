@@ -62,10 +62,6 @@ const UtilitiesScreen = () => {
     navigation.navigate('Exercises');
   };
 
-  const navigateToGoals = () => {
-    navigation.navigate('Goals');
-  };
-
   const navigateToWaterIntake = () => {
     navigation.navigate('WaterIntake');
   };
@@ -150,12 +146,6 @@ const UtilitiesScreen = () => {
       title: 'Kiến thức',
       icon: 'bulb',
       onPress: navigateToHealthInsights,
-    },
-    {
-      id: 'goals',
-      title: 'Mục tiêu',
-      icon: 'trophy',
-      onPress: navigateToGoals,
     },
     {
       id: 'water',

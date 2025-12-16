@@ -55,7 +55,7 @@ const TypingIndicator = () => {
 
   useEffect(() => {
     const animate = (dot: Animated.Value, delay: number) => {
-      Animated.loop(
+      return Animated.loop(
         Animated.sequence([
           Animated.delay(delay),
           Animated.timing(dot, {
@@ -69,12 +69,22 @@ const TypingIndicator = () => {
             useNativeDriver: true,
           }),
         ])
-      ).start();
+      );
     };
 
-    animate(dot1, 0);
-    animate(dot2, 200);
-    animate(dot3, 400);
+    const anim1 = animate(dot1, 0);
+    const anim2 = animate(dot2, 200);
+    const anim3 = animate(dot3, 400);
+    
+    anim1.start();
+    anim2.start();
+    anim3.start();
+
+    return () => {
+      anim1.stop();
+      anim2.stop();
+      anim3.stop();
+    };
   }, []);
 
   const animatedStyle = (dot: Animated.Value) => ({
@@ -119,13 +129,20 @@ export default function MessagesScreen() {
 
   // Load chat history from storage
   useEffect(() => {
-    loadChatHistory();
-  }, []);
+    if (user?.id) {
+      loadChatHistory();
+    }
+  }, [user?.id]);
 
   const loadChatHistory = async () => {
     try {
-      const savedMessages = await AsyncStorage.getItem('chatMessages');
-      const savedHistory = await AsyncStorage.getItem('chatHistory');
+      if (!user?.id) return;
+      
+      const messagesKey = `chatMessages_${user.id}`;
+      const historyKey = `chatHistory_${user.id}`;
+      
+      const savedMessages = await AsyncStorage.getItem(messagesKey);
+      const savedHistory = await AsyncStorage.getItem(historyKey);
       if (savedMessages) {
         const parsed = JSON.parse(savedMessages);
         // Convert timestamp strings back to Date objects
@@ -145,8 +162,13 @@ export default function MessagesScreen() {
 
   const saveChatHistory = async (msgs: Message[], history: ChatHistoryItem[]) => {
     try {
-      await AsyncStorage.setItem('chatMessages', JSON.stringify(msgs));
-      await AsyncStorage.setItem('chatHistory', JSON.stringify(history));
+      if (!user?.id) return;
+      
+      const messagesKey = `chatMessages_${user.id}`;
+      const historyKey = `chatHistory_${user.id}`;
+      
+      await AsyncStorage.setItem(messagesKey, JSON.stringify(msgs));
+      await AsyncStorage.setItem(historyKey, JSON.stringify(history));
     } catch (error) {
       console.error('Error saving chat history:', error);
     }
@@ -265,8 +287,10 @@ export default function MessagesScreen() {
             setMessages([]);
             setChatHistory([]);
             try {
-              await AsyncStorage.removeItem('chatMessages');
-              await AsyncStorage.removeItem('chatHistory');
+              if (user?.id) {
+                await AsyncStorage.removeItem(`chatMessages_${user.id}`);
+                await AsyncStorage.removeItem(`chatHistory_${user.id}`);
+              }
             } catch (error) {
               console.error('Error clearing chat:', error);
             }
