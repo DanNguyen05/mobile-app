@@ -183,7 +183,7 @@ Trả về JSON (tên TIẾNG VIỆT ngắn gọn):
       return res.json({
         success: true,
         data: {
-          foodName: 'Unknown food',
+          foodName: 'Món ăn không xác định',
           amount: '100g',
           calories: 200,
           protein: 10,
@@ -241,7 +241,7 @@ Trả về JSON (tên TIẾNG VIỆT ngắn gọn):
       return res.json({
         success: true,
         data: {
-          foodName: 'Unknown food',
+          foodName: 'Món ăn không xác định',
           amount: '100g',
           calories: 200,
           protein: 10,
@@ -255,7 +255,7 @@ Trả về JSON (tên TIẾNG VIỆT ngắn gọn):
     res.json({
       success: true,
       data: {
-        foodName: nutritionData.food_name || nutritionData.foodName || 'Unknown food',
+        foodName: nutritionData.food_name || nutritionData.foodName || 'Món ăn không xác định',
         amount: nutritionData.portion_size || nutritionData.portionSize || overrideAmount || '100g',
         calories: Math.round(parseFloat(nutritionData.calories) || 0),
         protein: Math.round(parseFloat(nutritionData.protein) || 0),
@@ -267,7 +267,7 @@ Trả về JSON (tên TIẾNG VIỆT ngắn gọn):
 
   } catch (error) {
     console.error('Food recognition error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Lỗi máy chủ nội bộ' });
   }
 };
 
@@ -478,9 +478,9 @@ Trả về JSON (tên TIẾNG VIỆT ngắn gọn):
       
       return res.json({
         success: false,
-        error: 'Failed to parse nutrition data',
+        error: 'Không thể phân tích dữ liệu dinh dưỡng',
         data: {
-          foodName: 'Unknown food',
+          foodName: 'Món ăn không xác định',
           amount: '100g',
           calories: 200,
           protein: 10,
@@ -493,7 +493,7 @@ Trả về JSON (tên TIẾNG VIỆT ngắn gọn):
 
     // Prepare food data
     const foodData = {
-      foodName: nutritionData.food_name || nutritionData.foodName || 'Unknown food',
+      foodName: nutritionData.food_name || nutritionData.foodName || 'Món ăn không xác định',
       amount: nutritionData.portion_size || nutritionData.portionSize || overrideAmount || '100g',
       calories: Math.round(parseFloat(nutritionData.calories) || 0),
       protein: Math.round(parseFloat(nutritionData.protein) || 0),
@@ -529,12 +529,12 @@ Trả về JSON (tên TIẾNG VIỆT ngắn gọn):
         eatenAt: created.eatenAt,
         mealType: created.mealType,
       },
-      message: 'Food recognized and saved successfully',
+      message: 'Nhận diện và lưu thành công',
     });
 
   } catch (error) {
     console.error('Food recognition and save error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Lỗi máy chủ nội bộ' });
   }
 };
 
@@ -548,7 +548,7 @@ export const generateExercisePlan = async (req, res) => {
     const { dailyIntake = 0, userQuery = 'Create today\'s workout plan' } = req.body;
 
     if (!Number.isFinite(dailyIntake)) {
-      return res.status(400).json({ error: 'dailyIntake is required' });
+      return res.status(400).json({ error: 'Thiếu thông tin lượng calo tiêu thụ' });
     }
 
     const userProfile = await prisma.user.findUnique({
@@ -557,7 +557,7 @@ export const generateExercisePlan = async (req, res) => {
     });
 
     if (!userProfile) {
-      return res.status(404).json({ error: 'User profile not found' });
+      return res.status(404).json({ error: 'Không tìm thấy thông tin người dùng' });
     }
 
     const weight = userProfile.weightKg || 70;
@@ -649,12 +649,12 @@ RETURN ONLY VALID JSON. NO EXTRA TEXT:
     const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
     let plan = {
-      summary: 'Today\'s workout plan',
+      summary: 'Kế hoạch tập luyện hôm nay',
       intensity: 'moderate',
       totalBurnEstimate: '400 kcal',
-      advice: 'Exercise regularly and eat enough protein!',
+      advice: 'Tập luyện đều đặn và ăn đủ protein!',
       exercises: [
-        { name: 'Morning Yoga Flow', duration: '20 min', reason: 'Gentle warm-up' }
+        { name: 'Morning Yoga Flow', duration: '20 min', reason: 'Khởi động cơ thể nhẹ nhàng' }
       ]
     };
 
@@ -674,7 +674,7 @@ RETURN ONLY VALID JSON. NO EXTRA TEXT:
               .map(ex => ({
                 name: AVAILABLE_PLANS.find(p => p.toLowerCase().includes(ex.name?.toLowerCase?.() || '')) || ex.name,
                 duration: ex.duration || '20 min',
-                reason: ex.reason || 'Suitable for you'
+                reason: ex.reason || 'Phù hợp với bạn'
               })) || plan.exercises
           };
         }
@@ -698,13 +698,13 @@ RETURN ONLY VALID JSON. NO EXTRA TEXT:
 
     // Return fallback plan
     res.json({
-      summary: 'Today\'s workout plan (fallback)',
+      summary: 'Kế hoạch tập luyện hôm nay (dự phòng)',
       intensity: 'moderate',
       totalBurnEstimate: '350-450 kcal',
-      advice: 'Exercise gently if you haven\'t consumed enough energy. Drink plenty of water!',
+      advice: 'Tập nhẹ nhàng nếu chưa nạp đủ năng lượng. Uống nhiều nước!',
       exercises: [
-        { name: 'Morning Yoga Flow', duration: '20 min', reason: 'Gentle body warm-up' },
-        { name: '20 Min HIIT Fat Loss - No Repeat Workout', duration: '20 min', reason: 'Effective fat burning' }
+        { name: 'Morning Yoga Flow', duration: '20 min', reason: 'Khởi động cơ thể nhẹ nhàng' },
+        { name: '20 Min HIIT Fat Loss - No Repeat Workout', duration: '20 min', reason: 'Đốt mỡ hiệu quả' }
       ]
     });
   }
@@ -718,7 +718,7 @@ export const chatWithAI = async (req, res) => {
     const { message, history = [], userProfile } = req.body;
 
     if (!message) {
-      return res.status(400).json({ error: 'Message is required' });
+      return res.status(400).json({ error: 'Thiếu nội dung tin nhắn' });
     }
 
     let systemPrompt = `Bạn là trợ lý AI về sức khỏe và thể hình thân thiện và chuyên nghiệp.
@@ -892,7 +892,7 @@ export const getAIContext = async (req, res) => {
     res.json({ user, meals, feedback });
   } catch (error) {
     console.error('Get AI context error:', error);
-    res.status(500).json({ error: 'Failed to build AI context' });
+    res.status(500).json({ error: 'Không thể xây dựng ngữ cảnh AI' });
   }
 };
 
@@ -905,7 +905,7 @@ export const generateMealPlan = async (req, res) => {
   const { allergies = '', preferences = '' } = req.body || {};
 
   if (!userId) {
-    return res.status(401).json({ error: 'Unauthorized' });
+    return res.status(401).json({ error: 'Chưa xác thực' });
   }
 
   try {
@@ -914,7 +914,7 @@ export const generateMealPlan = async (req, res) => {
     });
 
     if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+      return res.status(404).json({ error: 'Không tìm thấy người dùng' });
     }
 
     const weight = Number(user.weightKg) || 65;
@@ -1054,7 +1054,7 @@ Requirements:
 
       const jsonMatch = text.match(/\[[\s\S]*\]/) || text.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
-        throw new Error('No JSON array found');
+        throw new Error('Không tìm thấy mảng JSON');
       }
 
       const parsed = JSON.parse(jsonMatch[0]);
@@ -1063,7 +1063,7 @@ Requirements:
       } else if (Array.isArray(parsed?.days) && parsed.days.length > 0) {
         mealPlan = parsed.days;
       } else {
-        throw new Error('AI returned empty plan');
+        throw new Error('AI trả về kế hoạch rỗng');
       }
     } catch (aiError) {
       console.error('AI meal plan error, using fallback:', aiError);
