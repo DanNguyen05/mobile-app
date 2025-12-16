@@ -18,7 +18,6 @@ import WaterIntakeScreen from '../screens/waterIntake/WaterIntakeScreen';
 import MeasurementsScreen from '../screens/measurements/MeasurementsScreen';
 import RemindersScreen from '../screens/reminders/RemindersScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
-import { colors } from '../context/ThemeContext';
 
 export type UtilitiesStackParamList = {
   UtilitiesHome: undefined;

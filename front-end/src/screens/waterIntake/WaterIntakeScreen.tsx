@@ -29,19 +29,19 @@ export default function WaterIntakeScreen() {
 
   // Load data from AsyncStorage
   useEffect(() => {
-    if (user?.id) {
+    if (user?.user_id) {
       loadWaterData();
     }
-  }, [user?.id]);
+  }, [user?.user_id]);
 
   const loadWaterData = async () => {
     try {
-      if (!user?.id) return;
+      if (!user?.user_id) return;
       
       const today = new Date().toDateString();
-      const dateKey = `waterDate_${user.id}`;
-      const intakeKey = `waterIntake_${user.id}`;
-      const historyKey = `waterHistory_${user.id}`;
+      const dateKey = `waterDate_${user.user_id}`;
+      const intakeKey = `waterIntake_${user.user_id}`;
+      const historyKey = `waterHistory_${user.user_id}`;
       
       const savedDate = await AsyncStorage.getItem(dateKey);
       
@@ -66,10 +66,10 @@ export default function WaterIntakeScreen() {
 
   const saveWaterData = async (intake: number, hist: { time: string; amount: number }[]) => {
     try {
-      if (!user?.id) return;
+      if (!user?.user_id) return;
       
-      const intakeKey = `waterIntake_${user.id}`;
-      const historyKey = `waterHistory_${user.id}`;
+      const intakeKey = `waterIntake_${user.user_id}`;
+      const historyKey = `waterHistory_${user.user_id}`;
       
       await AsyncStorage.setItem(intakeKey, intake.toString());
       await AsyncStorage.setItem(historyKey, JSON.stringify(hist));
@@ -290,7 +290,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: '#45B7D1',
-    transition: 'height 0.3s ease',
   },
   waterWave: {
     width: '100%',

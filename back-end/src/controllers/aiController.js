@@ -18,97 +18,98 @@ export const recognizeFood = async (req, res) => {
       return res.status(400).json({ error: 'Missing base64Image' });
     }
 
-    const prompt = `BẠN LÀ CHUYÊN GIA DINH DƯỠNG CHUYÊN NGHIỆP. Nhiệm vụ: phân tích ảnh và tính toán dinh dưỡng CHÍNH XÁC TUYỆT ĐỐI.
+    const prompt = `BẠN LÀ CHUYÊN GIA DINH DƯỠNG CHUYÊN NGHIỆP. Phân tích ảnh và tính toán dinh dưỡng CHÍNH XÁC dựa trên khối lượng THỰC TẾ.
 
-🔍 QUY TRÌNH PHÂN TÍCH (BẮT BUỘC):
+⚠️ QUY TẮC QUAN TRỌNG:
+- QUAN SÁT KỸ KHỐI LƯỢNG/KÍCH THƯỚC món ăn trong ảnh
+- KHÔNG được ước tính mặc định 400-450 kcal cho mọi món
+- Món NHỎ (vài muỗng/miếng) = 50-200 kcal
+- Món VỪA (1 tô/đĩa nhỏ) = 200-400 kcal  
+- Món LỚN (1 tô to/đĩa to) = 400-800 kcal
+- Món RẤT LỚN (nhiều phần) = 800+ kcal
 
-1. NHẬN DIỆN:
-   - Xác định món ăn cụ thể
-   - Nhận biết nguyên liệu chính (thịt, rau, carb, dầu mỡ...)
-   - Phương pháp chế biến (chiên, luộc, nướng, xào...)
+📏 CHUẨN ƯỚC LƯỢNG (so sánh với bàn tay/vật dụng):
+- 1 muỗng cơm: ~30-40g = 40-50 kcal
+- 1 cốc nhỏ (200ml): nước trái cây = 80-100 kcal, sữa = 120 kcal
+- 1 bát cơm nhỏ: 150g = 195 kcal
+- 1 bát cơm to: 250g = 325 kcal
+- 1 đĩa cơm trung: 200g = 260 kcal
+- 1 tô phở/bún nhỏ: 400g = 350-450 kcal
+- 1 tô phở/bún to: 600g = 500-650 kcal
+- 1 gói mì instant: 75-85g = 320-380 kcal (chưa nấu)
+- 1 miếng gà rán (đùi): 100g = 250 kcal
+- 1 miếng pizza (1/8): 150g = 300 kcal
+- 1 hamburger: 200g = 550 kcal
+- 1 salad nhỏ: 150g = 80-150 kcal
 
-2. ƯỚC LƯỢNG KHỐI LƯỢNG:
-   - So sánh với đối tượng tham chiếu (tay, đĩa, gói, bát...)
-   - Gói mì instant: thường 75-85g
-   - Bát cơm nhỏ: ~150g, bát to: ~250g
-   - Đĩa cơm: 200-350g
-   - Bát phở/bún: 400-600g
-   - Ly/cốc: 200-300ml
+📊 DATABASE DINH DƯỠNG (trên 100g):
+🍚 CARBS:
+- Cơm trắng: 130 kcal | 3g protein, 28g carbs, 0g fat
+- Mì khô: 370 kcal | 13g protein, 74g carbs, 2g fat
+- Phở sợi: 110 kcal | 2g protein, 25g carbs, 0g fat
+- Bánh mì trắng: 265 kcal | 9g protein, 49g carbs, 3g fat
+- Khoai tây: 77 kcal | 2g protein, 17g carbs, 0g fat
 
-3. TÍNH TOÁN DINH DƯỠNG (DỰA TRÊN CƠ SỞ DỮ LIỆU THỰC TẾ):
+🍗 PROTEIN:
+- Gà luộc/hấp: 165 kcal | 31g protein, 0g carbs, 4g fat
+- Gà rán/chiên: 280 kcal | 27g protein, 12g carbs, 15g fat
+- Thịt bò nạc: 250 kcal | 26g protein, 0g carbs, 15g fat
+- Thịt heo nạc: 242 kcal | 27g protein, 0g carbs, 14g fat
+- Cá hồi: 206 kcal | 22g protein, 0g carbs, 13g fat
+- Trứng gà: 155 kcal | 13g protein, 1g carbs, 11g fat
+- Đậu hũ: 76 kcal | 8g protein, 2g carbs, 5g fat
 
-📊 BẢNG THAM KHẢO CHUẨN (100g):
-CARB:
-- Cơm trắng: 130 kcal, 3g protein, 28g carbs, 0g fat
-- Mì khô: 380 kcal, 13g protein, 75g carbs, 2g fat
-- Mì instant (có dầu): 450 kcal, 10g protein, 60g carbs, 18g fat
-- Phở khô: 360 kcal, 12g protein, 73g carbs, 1g fat
-- Bánh mì: 265 kcal, 9g protein, 49g carbs, 3g fat
+🥗 RAU/SALAD:
+- Rau xanh: 25 kcal | 2g protein, 4g carbs, 0g fat
+- Salad trộn: 50 kcal | 3g protein, 8g carbs, 1g fat
 
-PROTEIN:
-- Thịt gà luộc: 165 kcal, 31g protein, 0g carbs, 4g fat
-- Thịt gà chiên: 246 kcal, 30g protein, 10g carbs, 10g fat
-- Thịt bò xào: 250 kcal, 26g protein, 0g carbs, 15g fat
-- Thịt heo nạc: 242 kcal, 27g protein, 0g carbs, 14g fat
-- Cá hồi: 206 kcal, 22g protein, 0g carbs, 13g fat
-- Trứng: 155 kcal, 13g protein, 1g carbs, 11g fat
+💧 DẦU/SỐT:
+- Dầu ăn (mỗi 10ml): 90 kcal, 10g fat
+- Mayonnaise (20g): 140 kcal, 15g fat
+- Nước sốt (20g): 40 kcal
 
-RAU CỦ:
-- Rau xanh: 20-30 kcal, 2g protein, 4g carbs, 0g fat
-- Khoai lang: 86 kcal, 2g protein, 20g carbs, 0g fat
+🎯 VÍ DỤ PHÂN TÍCH:
+1. Tô phở bò TÔ TO (600g):
+   - Nước: 50g × 0.5 = 25 kcal
+   - Sợi phở: 250g × 1.1 = 275 kcal
+   - Thịt bò: 100g × 2.5 = 250 kcal
+   - Hành/rau: 50g × 0.25 = 13 kcal
+   → TỔNG: 563 kcal, 32g protein, 70g carbs, 15g fat
 
-DẦU/NƯỚC SỐT:
-- Dầu ăn (10ml): 90 kcal, 0g protein, 0g carbs, 10g fat
-- Nước sốt đậm đặc (20g): 30-50 kcal
+2. Gói mì gói NHỎ (75g):
+   - Mì khô: 75g × 3.7 = 278 kcal
+   - Gói gia vị: +40 kcal
+   → TỔNG: 318 kcal, 9g protein, 56g carbs, 2g fat
 
-📝 CÔNG THỨC TÍNH:
-- Tổng calo = Σ (khối lượng nguyên liệu × calo/100g)
-- Tổng protein = Σ (khối lượng nguyên liệu × protein/100g)
-- Tổng carbs = Σ (khối lượng nguyên liệu × carbs/100g)
-- Tổng fat = Σ (khối lượng nguyên liệu × fat/100g)
+3. 1 cốc sinh tố (250ml):
+   - Trái cây: 150g × 0.6 = 90 kcal
+   - Sữa: 100ml × 0.6 = 60 kcal
+   → TỔNG: 150 kcal, 3g protein, 30g carbs, 3g fat
 
-⚠️ LƯU Ý ĐẶC BIỆT:
-- Món CHIÊN/RÁN: +20-30% calo do hấp thụ dầu
-- Món XÀO: +10-15% calo do dầu
-- Có NƯỚC SỐT đậm: +50-100 kcal
-- Có PHÔ MAI: +50-80 kcal/lát
+4. Salad nhỏ (200g):
+   - Rau: 150g × 0.25 = 38 kcal
+   - Sốt: 20g × 1.4 = 28 kcal
+   - Gà: 30g × 1.65 = 50 kcal
+   → TỔNG: 116 kcal, 12g protein, 8g carbs, 4g fat
 
-🎯 VÍ DỤ TÍNH TOÁN CHI TIẾT:
-Mì gói Omachi (85g) + nước sốt (15g):
-- Mì khô: 85g × 4.5 = 383 kcal
-- Gói gia vị/dầu: +50 kcal
-→ TỔNG: ~433 kcal, 10g protein, 56g carbs, 16g fat
+⚠️ ĐIỀU CHỈNH:
+- Món chiên/rán: +20-30% calories (hấp thụ dầu)
+- Món xào: +10-15% calories
+- Nước sốt đậm: +50-100 kcal
+- Phô mai: +70 kcal/lát (20g)
 
-Cơm gà (250g cơm + 100g gà):
-- Cơm: 250g × 1.3 = 325 kcal, 8g protein, 70g carbs
-- Gà chiên: 100g × 2.46 = 246 kcal, 30g protein, 10g fat
-→ TỔNG: 571 kcal, 38g protein, 70g carbs, 10g fat
-
-⚠️ QUAN TRỌNG: CHỈ TRẢ VỀ JSON, KHÔNG CÓ VĂN BẢN GIẢI THÍCH!
-
-VÍ DỤ OUTPUT ĐÚNG:
+🎯 OUTPUT JSON (KHÔNG thêm text khác):
 {
-  "food_name": "Phở bò",
-  "portion_size": "1 tô (550g)",
-  "calories": 485,
-  "protein": 32,
-  "carbs": 68,
-  "fats": 8,
-  "sugar": 4
+  "food_name": "Tên món (Tiếng Việt)",
+  "portion_size": "khối lượng ước tính (VD: 250g, 1 tô 500g)",
+  "calories": <số nguyên dựa trên khối lượng thực tế>,
+  "protein": <số nguyên gram>,
+  "carbs": <số nguyên gram>,
+  "fats": <số nguyên gram>,
+  "sugar": <số nguyên gram>
 }
 
-Format JSON yêu cầu (tên TIẾNG VIỆT ngắn gọn):
-{
-  "food_name": "...",
-  "portion_size": "...",
-  "calories": <integer>,
-  "protein": <integer>,
-  "carbs": <integer>,
-  "fats": <integer>,
-  "sugar": <integer>
-}
-
-✅ CHỈ TRẢ VỀ JSON NHƯ VÍ DỤ TRÊN, KHÔNG GIẢI THÍCH!`;
+✅ CHỈ TRẢ JSON, KHÔNG GIẢI THÍCH!`;
 
     // Extract base64 data from data URI
     const base64Data = base64Image.includes('base64,') 
@@ -161,15 +162,11 @@ Format JSON yêu cầu (tên TIẾNG VIỆT ngắn gọn):
     const data = await response.json();
     let content = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
-    console.log('Gemini raw response:', content);
-
     // Clean up the response - remove markdown code blocks
     content = content.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
     
     // Check if response was cut off (incomplete) - try to fix it
     if (!content.includes('}') || content.split('{').length !== content.split('}').length) {
-      console.log('Incomplete JSON, attempting to complete:', content);
-      
       // Try to extract partial food name
       const nameMatch = content.match(/"food_name"\s*:\s*"([^"]*)/);
       const partialName = nameMatch ? nameMatch[1] : 'Món ăn';
@@ -184,7 +181,6 @@ Format JSON yêu cầu (tên TIẾNG VIỆT ngắn gọn):
   "fats": 10,
   "sugar": 3
 }`;
-      console.log('Auto-completed JSON:', content);
     }
     
     // Try to find JSON object
@@ -197,12 +193,12 @@ Format JSON yêu cầu (tên TIẾNG VIỆT ngắn gọn):
         success: true,
         data: {
           foodName: 'Món ăn không xác định',
-          amount: '100g',
-          calories: 200,
-          protein: 10,
-          carbs: 30,
-          fat: 5,
-          sugar: 5,
+          amount: '200g',
+          calories: 250,
+          protein: 12,
+          carbs: 35,
+          fat: 6,
+          sugar: 4,
         }
       });
     }
@@ -244,7 +240,6 @@ Format JSON yêu cầu (tên TIẾNG VIỆT ngắn gọn):
       // Clean up trailing commas before closing braces
       jsonString = jsonString.replace(/,(\s*})/g, '$1');
       
-      console.log('Parsed JSON string:', jsonString);
       nutritionData = JSON.parse(jsonString);
     } catch (parseError) {
       console.error('Parse error:', parseError.message);
@@ -255,12 +250,12 @@ Format JSON yêu cầu (tên TIẾNG VIỆT ngắn gọn):
         success: true,
         data: {
           foodName: 'Món ăn không xác định',
-          amount: '100g',
-          calories: 200,
-          protein: 10,
-          carbs: 30,
-          fat: 5,
-          sugar: 5,
+          amount: '200g',
+          calories: 280,
+          protein: 15,
+          carbs: 38,
+          fat: 7,
+          sugar: 4,
         }
       });
     }
@@ -429,20 +424,14 @@ Format JSON yêu cầu (tên TIẾNG VIỆT ngắn gọn):
     const data = await response.json();
     let content = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
-    console.log('🔍 Gemini raw response:', content);
-
     // Clean up the response - remove markdown code blocks
     content = content.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
     
     // Check if response was cut off (incomplete) - try to auto-complete
     if (!content.includes('}') || content.split('{').length !== content.split('}').length) {
-      console.log('⚠️ JSON incomplete, attempting to complete...');
-      
       // Try to extract partial food name
       const nameMatch = content.match(/"food_name"\s*:\s*"([^"]*)/);
       const partialName = nameMatch ? nameMatch[1] : 'Món ăn';
-      
-      console.log('📝 Extracted food name:', partialName);
       
       // Auto-complete JSON with Vietnamese food defaults
       content = `{
@@ -454,7 +443,6 @@ Format JSON yêu cầu (tên TIẾNG VIỆT ngắn gọn):
   "fats": 10,
   "sugar": 3
 }`;
-      console.log('✅ Auto-completed JSON:', content);
     }
     
     // Try to find JSON object
@@ -499,9 +487,7 @@ Format JSON yêu cầu (tên TIẾNG VIỆT ngắn gọn):
       
       jsonString = jsonString.replace(/,(\s*})/g, '$1');
       
-      console.log('📊 Parsed JSON string:', jsonString);
       nutritionData = JSON.parse(jsonString);
-      console.log('✅ Nutrition data:', nutritionData);
     } catch (parseError) {
       console.error('Parse error:', parseError.message);
       
@@ -521,7 +507,6 @@ Format JSON yêu cầu (tên TIẾNG VIỆT ngắn gọn):
     }
 
     // Prepare food data
-    console.log('🍱 Preparing food data from:', nutritionData);
     const foodData = {
       foodName: nutritionData.food_name || nutritionData.foodName || 'Món ăn không xác định',
       amount: nutritionData.portion_size || nutritionData.portionSize || overrideAmount || '100g',
@@ -531,7 +516,6 @@ Format JSON yêu cầu (tên TIẾNG VIỆT ngắn gọn):
       fat: Math.round(parseFloat(nutritionData.fats || nutritionData.fat) || 0),
       sugar: Math.round(parseFloat(nutritionData.sugar) || 0),
     };
-    console.log('✨ Final foodData:', foodData);
 
     // Save to food log
     const created = await prisma.foodLog.create({
@@ -607,7 +591,6 @@ export const generateExercisePlan = async (req, res) => {
     });
 
     if (cached && cached.expiresAt > new Date()) {
-      console.log('AI Plan Cache HIT');
       return res.json(cached.plan);
     }
 
@@ -710,7 +693,7 @@ CHỈ TRẢ VỀ JSON HỢP LỆ. KHÔNG CÓ VĂN BẢN THÊM:
           };
         }
       } catch (e) {
-        console.log('JSON parse failed, using fallback');
+        // JSON parse failed, using fallback
       }
     }
 
@@ -813,7 +796,6 @@ CẤU TRÚC PHẢN HỒI:
           
           // Handle quota exceeded (429) - don't retry, return immediately
           if (response.status === 429) {
-            console.log('Gemini API quota exceeded');
             const quotaResponse = `Xin lỗi, hạn mức sử dụng AI hôm nay đã hết. 😔
 
 Bạn vẫn có thể:

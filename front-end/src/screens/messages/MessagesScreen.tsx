@@ -17,11 +17,9 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
 
-import { api } from '../../services/api';
-import { chatWithAI, analyzeFood, analyzeAndSaveFood, generateExercisePlan, type AIExercisePlan, type UserProfileContext } from '../../services/aiService';
+import { chatWithAI, generateExercisePlan, type AIExercisePlan, type UserProfileContext } from '../../services/aiService';
 import { useAuth } from '../../context/AuthContext';
 import { colors, spacing, borderRadius } from '../../context/ThemeContext';
 
@@ -129,17 +127,17 @@ export default function MessagesScreen() {
 
   // Load chat history from storage
   useEffect(() => {
-    if (user?.id) {
+    if (user?.user_id) {
       loadChatHistory();
     }
-  }, [user?.id]);
+  }, [user?.user_id]);
 
   const loadChatHistory = async () => {
     try {
-      if (!user?.id) return;
+      if (!user?.user_id) return;
       
-      const messagesKey = `chatMessages_${user.id}`;
-      const historyKey = `chatHistory_${user.id}`;
+      const messagesKey = `chatMessages_${user.user_id}`;
+      const historyKey = `chatHistory_${user.user_id}`;
       
       const savedMessages = await AsyncStorage.getItem(messagesKey);
       const savedHistory = await AsyncStorage.getItem(historyKey);
@@ -162,10 +160,10 @@ export default function MessagesScreen() {
 
   const saveChatHistory = async (msgs: Message[], history: ChatHistoryItem[]) => {
     try {
-      if (!user?.id) return;
+      if (!user?.user_id) return;
       
-      const messagesKey = `chatMessages_${user.id}`;
-      const historyKey = `chatHistory_${user.id}`;
+      const messagesKey = `chatMessages_${user.user_id}`;
+      const historyKey = `chatHistory_${user.user_id}`;
       
       await AsyncStorage.setItem(messagesKey, JSON.stringify(msgs));
       await AsyncStorage.setItem(historyKey, JSON.stringify(history));
@@ -287,9 +285,9 @@ export default function MessagesScreen() {
             setMessages([]);
             setChatHistory([]);
             try {
-              if (user?.id) {
-                await AsyncStorage.removeItem(`chatMessages_${user.id}`);
-                await AsyncStorage.removeItem(`chatHistory_${user.id}`);
+              if (user?.user_id) {
+                await AsyncStorage.removeItem(`chatMessages_${user.user_id}`);
+                await AsyncStorage.removeItem(`chatHistory_${user.user_id}`);
               }
             } catch (error) {
               console.error('Error clearing chat:', error);
@@ -517,9 +515,6 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'center',
   },
-  headerRight: {
-    width: 40,
-  },
   clearButton: {
     padding: spacing.sm,
   },
@@ -708,61 +703,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.text,
     fontWeight: '600',
-  },
-  quickRepliesContainer: {
-    marginTop: spacing.lg,
-    marginBottom: spacing.md,
-  },
-  quickRepliesTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.text,
-    marginBottom: spacing.md,
-  },
-  quickReplyCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    padding: spacing.md,
-    borderRadius: borderRadius.lg,
-    marginBottom: spacing.sm,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
-    elevation: 2,
-    gap: spacing.md,
-  },
-  quickReplyIconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: borderRadius.lg,
-    backgroundColor: colors.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  quickReplyText: {
-    flex: 1,
-    fontSize: 14,
-    color: colors.text,
-    fontWeight: '600',
-  },
-  quickRepliesRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  quickReplySmallCard: {
-    flex: 1,
-    backgroundColor: '#fff',
-    padding: spacing.md,
-    borderRadius: borderRadius.lg,
-    alignItems: 'center',
-    gap: spacing.xs,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
-    elevation: 2,
   },
   inputWrapper: {
     backgroundColor: '#fff',

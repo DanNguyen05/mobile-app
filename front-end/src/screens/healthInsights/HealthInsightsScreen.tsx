@@ -659,7 +659,6 @@ const styles = StyleSheet.create({
     right: 0,
     padding: spacing.lg,
     paddingTop: spacing.xl,
-    background: 'linear-gradient(to bottom, transparent, rgba(0,0,0,0.8))',
     backgroundColor: 'rgba(0,0,0,0.6)',
   },
   categoryBadge: {

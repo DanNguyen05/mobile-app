@@ -1,5 +1,5 @@
 // src/screens/dashboard/DashboardScreen.tsx
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,6 @@ import {
   RefreshControl,
   TouchableOpacity,
   Dimensions,
-  Animated,
   FlatList,
   Image,
 } from 'react-native';
@@ -21,10 +20,8 @@ import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 
 import { useAuth } from '../../context/AuthContext';
-import { api, type User, type DailyStatistics, type FoodLog, type WorkoutLog } from '../../services/api';
+import { api, type DailyStatistics, type FoodLog, type WorkoutLog } from '../../services/api';
 import { colors, spacing, borderRadius } from '../../context/ThemeContext';
-import { StatCard } from '../../components/StatCard';
-import { NutritionChart } from '../../components/NutritionChart';
 import { MealCard } from '../../components/MealCard';
 import type { MainTabParamList } from '../../navigation/AppNavigator';
 import { eventStorage } from '../../services/eventStorage';
@@ -141,8 +138,6 @@ export default function DashboardScreen() {
   const [todayEvents, setTodayEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [currentStreak, setCurrentStreak] = useState(7); // Mock data - sẽ lấy từ API sau
-  const progressAnim = useRef(new Animated.Value(0)).current;
 
   const goToFoodLog = () => navigation.navigate('FoodLog');
   const goToExercises = () => {
@@ -312,34 +307,6 @@ export default function DashboardScreen() {
   const proteinGoal = Math.round(tdee * 0.3 / 4);
   const carbsGoal = Math.round(tdee * 0.4 / 4);
   const fatGoal = Math.round(tdee * 0.3 / 9);
-
-  // Animate progress bar
-  useEffect(() => {
-    Animated.spring(progressAnim, {
-      toValue: Math.min(calorieIntakePercent, 100),
-      friction: 8,
-      tension: 40,
-      useNativeDriver: false,
-    }).start();
-  }, [calorieIntakePercent]);
-
-  // Motivational message dựa trên tiến độ
-  const getMotivationalMessage = () => {
-    const remaining = tdee - totalNutrition.calories;
-    if (calorieIntakePercent >= 100) {
-      return totalNutrition.calories > tdee + 200 
-        ? { icon: '⚠️', text: `Đã vượt ${totalNutrition.calories - tdee} kcal`, color: colors.warning }
-        : { icon: '🎉', text: 'Hoàn thành mục tiêu hôm nay!', color: colors.success };
-    } else if (calorieIntakePercent >= 80) {
-      return { icon: '🔥', text: `Sắp đạt mục tiêu! Còn ${remaining} kcal`, color: colors.primary };
-    } else if (calorieIntakePercent >= 50) {
-      return { icon: '💪', text: `Đang tiến bộ tốt! Còn ${remaining} kcal`, color: colors.primary };
-    } else {
-      return { icon: '🌟', text: `Bắt đầu thôi! Còn ${remaining} kcal`, color: colors.textSecondary };
-    }
-  };
-
-  const message = getMotivationalMessage();
 
   if (loading) {
     return (
@@ -778,134 +745,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: colors.textSecondary,
   },
-  // Summary Card
-  summaryCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-    marginBottom: spacing.lg,
-    borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.1)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  summaryHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-  },
-  progressContainer: {
-    marginBottom: spacing.md,
-  },
-  progressBackground: {
-    height: 14,
-    backgroundColor: 'rgba(229, 231, 235, 0.6)',
-    borderRadius: borderRadius.full,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.1)',
-  },
-  progressBar: {
-    height: '100%',
-  },
-  progressGradient: {
-    flex: 1,
-    borderRadius: borderRadius.full,
-  },
-  motivationContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    marginBottom: spacing.md,
-    backgroundColor: 'rgba(236, 253, 245, 0.8)',
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.15)',
-  },
-  motivationIcon: {
-    fontSize: 22,
-    marginRight: spacing.sm,
-  },
-  motivationText: {
-    fontSize: 14,
-    fontWeight: '600',
-    flex: 1,
-  },
-  summaryTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: colors.text,
-    letterSpacing: -0.3,
-  },
-  percentBadge: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.lg,
-    minWidth: 60,
-    alignItems: 'center',
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  percentText: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#fff',
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-  },
-  summaryItem: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  summaryValue: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  summaryLabel: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginTop: 4,
-  },
-  summaryDivider: {
-    width: 1,
-    height: 40,
-    backgroundColor: colors.border,
-  },
-  // Stats Grid - 1 Row with 4 Columns
-  statsGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: spacing.lg,
-    gap: spacing.xs,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.85)',
-    borderRadius: borderRadius.md,
-    padding: spacing.sm,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.12)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-  },
   statIcon: {
     width: 40,
     height: 40,
@@ -913,104 +752,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: spacing.xs,
-  },
-  statValue: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  statLabel: {
-    fontSize: 10,
-    color: colors.textSecondary,
-    marginTop: 2,
-    textAlign: 'center',
-  },
-  // Streak & Achievements
-  streakCard: {
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-    marginBottom: spacing.lg,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-    overflow: 'hidden',
-    shadowColor: '#f59e0b',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 6,
-  },
-  streakCardGradient: {
-    padding: spacing.lg,
-  },
-  streakGradient: {
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-  },
-  streakHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-  },
-  streakEmoji: {
-    fontSize: 40,
-    marginRight: spacing.sm,
-    lineHeight: 40,
-  },
-  streakInfo: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  streakNumber: {
-    fontSize: 26,
-    fontWeight: '700',
-    color: '#f97316',
-    lineHeight: 30,
-  },
-  streakText: {
-    fontSize: 13,
-    color: '#92400e',
-    marginTop: 2,
-  },
-  badgesContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-evenly',
-    paddingTop: spacing.md,
-    paddingHorizontal: spacing.xs,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(251, 146, 60, 0.2)',
-    gap: spacing.xs,
-  },
-  badge: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: spacing.sm,
-    paddingHorizontal: 2,
-    borderRadius: borderRadius.lg,
-    backgroundColor: 'rgba(52, 211, 153, 0.15)',
-    borderWidth: 2,
-    borderColor: '#10b981',
-  },
-  badgeLocked: {
-    backgroundColor: 'rgba(156, 163, 175, 0.1)',
-    borderColor: 'rgba(156, 163, 175, 0.3)',
-    opacity: 0.6,
-  },
-  badgeIcon: {
-    fontSize: 26,
-    marginBottom: 4,
-    lineHeight: 28,
-  },
-  badgeLabel: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#059669',
-    textAlign: 'center',
-  },
-  badgeLabelLocked: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: '#9ca3af',
-    textAlign: 'center',
   },
   // Section
   section: {
@@ -1217,39 +958,6 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginTop: 2,
   },
-  chartCenter: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.md,
-  },
-  macroLegend: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: spacing.md,
-    marginBottom: spacing.md,
-    paddingHorizontal: spacing.xs,
-  },
-  macroItem: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: spacing.xs,
-    flex: 1,
-  },
-  macroDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  macroLabel: {
-    fontSize: 11,
-    color: colors.textSecondary,
-    fontWeight: '600',
-  },
-  macroValue: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: colors.text,
-  },
   macroRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1340,7 +1048,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.textLight,
   },
-  eventTimeContainer: {
+  eventTime: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,

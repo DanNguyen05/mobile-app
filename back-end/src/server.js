@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import rateLimit from 'express-rate-limit';
 import { config } from './config/index.js';
 import { attachUserIfPresent } from './middleware/auth.js';
 import { getImage, hasImage } from './utils/imageCache.js';
@@ -16,6 +17,24 @@ import calendarRoutes from './routes/calendar.js';
 const app = express();
 const PORT = config.port;
 
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again later.',
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+});
+
+// Stricter rate limit for AI endpoints (more resource intensive)
+const aiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20, // Limit each IP to 20 AI requests per windowMs
+  message: 'Too many AI requests from this IP, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // Middleware
 app.use(cors({
   origin: config.corsOrigins === '*' ? '*' : config.corsOrigins,
@@ -25,6 +44,9 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' }));
 app.use(cookieParser());
 app.use(attachUserIfPresent);
+
+// Apply general rate limiter to all API routes
+app.use('/api/', limiter);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -55,7 +77,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', authRoutes); // Also mount on /api/users for /api/users/me
 app.use('/api/food-log', foodLogRoutes);
 app.use('/api/workout-log', workoutLogRoutes);
-app.use('/api/ai', aiRoutes);
+app.use('/api/ai', aiLimiter, aiRoutes); // Stricter rate limit for AI
 app.use('/api/statistics', statisticsRoutes);
 app.use('/api/calendar', calendarRoutes);
 

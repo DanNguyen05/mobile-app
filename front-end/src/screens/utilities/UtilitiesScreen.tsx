@@ -6,14 +6,12 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-import { useAuth } from '../../context/AuthContext';
 import { colors, spacing, borderRadius } from '../../context/ThemeContext';
 import type { UtilitiesStackParamList } from '../../navigation/UtilitiesStackNavigator';
 
@@ -27,12 +25,7 @@ interface UtilityItem {
 }
 
 const UtilitiesScreen = () => {
-  const { user, logout } = useAuth();
   const navigation = useNavigation<NavigationProp>();
-
-  const navigateToSettings = () => {
-    navigation.navigate('Settings');
-  };
 
   const navigateToProgress = () => {
     navigation.navigate('Progress');
@@ -64,39 +57,6 @@ const UtilitiesScreen = () => {
 
   const navigateToWaterIntake = () => {
     navigation.navigate('WaterIntake');
-  };
-
-  const navigateToMeasurements = () => {
-    navigation.navigate('Measurements');
-  };
-
-  const navigateToReminders = () => {
-    navigation.navigate('Reminders');
-  };
-
-  const navigateToProfile = () => {
-    navigation.navigate('Profile');
-  };
-
-  const handleLogout = async () => {
-    Alert.alert(
-      'Đăng xuất',
-      'Bạn có chắc chắn muốn đăng xuất?',
-      [
-        { text: 'Hủy', style: 'cancel' },
-        {
-          text: 'Đăng xuất',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await logout();
-            } catch (error) {
-              Alert.alert('Lỗi', 'Không thể đăng xuất');
-            }
-          },
-        },
-      ]
-    );
   };
 
   // Main featured items - 4 items in a row

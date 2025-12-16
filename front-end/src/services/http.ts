@@ -6,21 +6,26 @@ import Constants from 'expo-constants';
 const ACCESS_TOKEN_KEY = 'access_token';
 const REFRESH_TOKEN_KEY = 'refresh_token';
 
-// Tự động detect IP từ Expo dev server
+// Get API URL from environment or auto-detect from Expo dev server
 const getBaseUrl = () => {
+  // Priority 1: Production API URL from environment
+  const apiUrl = Constants.expoConfig?.extra?.apiUrl;
+  if (apiUrl) {
+    return apiUrl;
+  }
+  
+  // Priority 2: Development - auto-detect IP từ Expo dev server
   const expoHostUri = Constants.expoConfig?.hostUri;
   if (expoHostUri) {
     const ip = expoHostUri.split(':')[0];
-    const url = `http://${ip}:3001`;
-    console.log('🌐 API Base URL:', url);
-    return url;
+    return `http://${ip}:3001`;
   }
-  console.log('🌐 API Base URL: http://localhost:3001 (fallback)');
+  
+  // Fallback: localhost (for local development)
   return 'http://localhost:3001';
 };
 
 const BASE_URL = getBaseUrl();
-console.log('📡 HTTP Service initialized with BASE_URL:', BASE_URL);
 
 interface RequestOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';

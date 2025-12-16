@@ -1,5 +1,5 @@
 // src/screens/mealPlan/MealPlanScreen.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -178,7 +178,6 @@ export default function MealPlanScreen() {
       const result = await api.generateMealPlan({
         allergies: allergies.trim() || undefined,
         preferences: preferences.trim() || undefined,
-        timestamp: Date.now(),
       });
 
       if (result.mealPlan && Array.isArray(result.mealPlan)) {

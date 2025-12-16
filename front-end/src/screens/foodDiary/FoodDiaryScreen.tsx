@@ -62,11 +62,8 @@ export default function FoodDiaryScreen() {
   const fetchFoodLogs = useCallback(async () => {
     try {
       const logs = await api.getFoodLog();
-      console.log('📊 API Response:', logs);
-      console.log('📊 Is Array?', Array.isArray(logs));
       
       if (!Array.isArray(logs)) {
-        console.warn('⚠️ API did not return an array, setting empty array');
         setFoodLogs([]);
         return;
       }
@@ -74,10 +71,9 @@ export default function FoodDiaryScreen() {
       const todayLogs = logs.filter(
         (log) => format(new Date(log.eaten_at), 'yyyy-MM-dd') === today
       );
-      console.log('📊 Today logs:', todayLogs);
       setFoodLogs(todayLogs);
     } catch (error) {
-      console.error('❌ Error fetching food logs:', error);
+      console.error('Error fetching food logs:', error);
       setFoodLogs([]);
     }
   }, [today]);
@@ -214,6 +210,7 @@ export default function FoodDiaryScreen() {
         fat_g: parseFloat(fat) || 0,
         meal_type: mealType,
         eaten_at: new Date().toISOString(),
+        image_url: selectedImage || undefined,
       });
       
       // Close modal and reset form first
@@ -489,7 +486,7 @@ export default function FoodDiaryScreen() {
                           mealType === type && styles.mealTypeBtnTextActive,
                         ]}
                       >
-                        {type}
+                        {MEAL_TYPE_LABELS[type]}
                       </Text>
                     </TouchableOpacity>
                   ))}
