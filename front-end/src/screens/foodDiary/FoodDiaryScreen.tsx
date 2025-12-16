@@ -14,7 +14,7 @@ import {
   Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useFocusEffect } from '@react-navigation/native';
 import { format } from 'date-fns';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -32,7 +32,6 @@ const MEAL_TYPE_LABELS: Record<string, string> = {
 };
 
 export default function FoodDiaryScreen() {
-  const navigation = useNavigation();
   const [foodLogs, setFoodLogs] = useState<FoodLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -41,7 +40,6 @@ export default function FoodDiaryScreen() {
   const [analyzingImage, setAnalyzingImage] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [selectedImageBase64, setSelectedImageBase64] = useState<string | null>(null);
   const [aiResult, setAiResult] = useState<{
     foodName: string;
     calories: number;
@@ -114,7 +112,6 @@ export default function FoodDiaryScreen() {
     setFat('');
     setMealType('Breakfast');
     setSelectedImage(null);
-    setSelectedImageBase64(null);
     setAiResult(null);
   };
 
@@ -165,13 +162,10 @@ export default function FoodDiaryScreen() {
       allowsEditing: true,
       aspect: [4, 3],
       quality: 0.8,
-      base64: true,
     });
 
     if (!result.canceled && result.assets[0]) {
-      const asset = result.assets[0];
-      setSelectedImage(asset.uri);
-      setSelectedImageBase64(asset.base64 ?? null);
+      setSelectedImage(result.assets[0].uri);
       setShowImageModal(true);
     }
   };
@@ -188,13 +182,10 @@ export default function FoodDiaryScreen() {
       allowsEditing: true,
       aspect: [4, 3],
       quality: 0.8,
-      base64: true,
     });
 
     if (!result.canceled && result.assets[0]) {
-      const asset = result.assets[0];
-      setSelectedImage(asset.uri);
-      setSelectedImageBase64(asset.base64 ?? null);
+      setSelectedImage(result.assets[0].uri);
       setShowImageModal(true);
     }
   };
@@ -219,10 +210,6 @@ export default function FoodDiaryScreen() {
 
     setSaving(true);
     try {
-      const imagePayload = selectedImageBase64
-        ? `data:image/jpeg;base64,${selectedImageBase64}`
-        : selectedImage || undefined;
-
       await api.addFoodLog({
         food_name: foodName,
         calories: parseInt(calories),
@@ -231,7 +218,6 @@ export default function FoodDiaryScreen() {
         fat_g: parseFloat(fat) || 0,
         meal_type: mealType,
         eaten_at: new Date().toISOString(),
-        image_url: imagePayload,
       });
       
       // Close modal and reset form first
@@ -299,58 +285,107 @@ export default function FoodDiaryScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
-      {/* Header */}
-      <View style={styles.header}>
-<Text style={styles.headerTitle}>Nhật ký</Text>
-</View>
-
-      {/* Summary */}
-      <View style={styles.summaryCard}>
-        <Text style={styles.summaryTitle}>Tổng kết hôm nay</Text>
-        <View style={styles.summaryRow}>
-          <View style={styles.summaryItem}>
-            <Text style={styles.summaryValue}>{totals.calories}</Text>
-            <Text style={styles.summaryLabel}>Calo</Text>
-          </View>
-          <View style={styles.summaryItem}>
-            <Text style={[styles.summaryValue, { color: colors.protein }]}>
-              {Math.round(totals.protein)}g
-            </Text>
-            <Text style={styles.summaryLabel}>Đạm</Text>
-          </View>
-          <View style={styles.summaryItem}>
-            <Text style={[styles.summaryValue, { color: colors.carbs }]}>
-              {Math.round(totals.carbs)}g
-            </Text>
-            <Text style={styles.summaryLabel}>Tinh bột</Text>
-          </View>
-          <View style={styles.summaryItem}>
-            <Text style={[styles.summaryValue, { color: colors.fat }]}>
-              {Math.round(totals.fat)}g
-            </Text>
-            <Text style={styles.summaryLabel}>Chất béo</Text>
-          </View>
-        </View>
-      </View>
-
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Nhật ký dinh dưỡng</Text>
+        </View>
+
+        {/* Summary Card with Gradient */}
+        <View style={styles.summaryCard}>
+          <View style={styles.summaryHeader}>
+            <View style={styles.summaryTitleRow}>
+              <Ionicons name="stats-chart" size={16} color={colors.primary} />
+              <Text style={styles.summaryTitle}>Tổng kết hôm nay</Text>
+            </View>
+            <View style={styles.dateBadge}>
+              <Text style={styles.dateText}>{format(new Date(), 'dd/MM')}</Text>
+            </View>
+          </View>
+          
+          <View style={styles.summaryGrid}>
+            <View style={styles.summaryItem}>
+              <View style={[styles.summaryIconBg, { backgroundColor: '#FFF3E0' }]}>
+                <Ionicons name="flame" size={18} color="#FF9800" />
+              </View>
+              <Text style={styles.summaryValue}>{totals.calories}</Text>
+              <Text style={styles.summaryLabel}>Calo</Text>
+            </View>
+            
+            <View style={styles.summaryItem}>
+              <View style={[styles.summaryIconBg, { backgroundColor: '#E8F5E9' }]}>
+                <Ionicons name="fitness" size={18} color="#4CAF50" />
+              </View>
+              <Text style={[styles.summaryValue, { color: colors.protein }]}>
+                {Math.round(totals.protein)}
+              </Text>
+              <Text style={styles.summaryLabel}>Protein (g)</Text>
+            </View>
+            
+            <View style={styles.summaryItem}>
+              <View style={[styles.summaryIconBg, { backgroundColor: '#FFF8E1' }]}>
+                <Ionicons name="pizza" size={18} color="#FFC107" />
+              </View>
+              <Text style={[styles.summaryValue, { color: colors.carbs }]}>
+                {Math.round(totals.carbs)}
+              </Text>
+              <Text style={styles.summaryLabel}>Carbs (g)</Text>
+            </View>
+            
+            <View style={styles.summaryItem}>
+              <View style={[styles.summaryIconBg, { backgroundColor: '#FCE4EC' }]}>
+                <Ionicons name="water" size={18} color="#E91E63" />
+              </View>
+              <Text style={[styles.summaryValue, { color: colors.fat }]}>
+                {Math.round(totals.fat)}
+              </Text>
+              <Text style={styles.summaryLabel}>Fat (g)</Text>
+            </View>
+          </View>
+
+          {foodLogs.length > 0 && (
+            <View style={styles.mealCountBadge}>
+              <Ionicons name="restaurant" size={14} color={colors.primary} />
+              <Text style={styles.mealCountText}>{foodLogs.length} bữa ăn</Text>
+            </View>
+          )}
+        </View>
+
+        {/* Meal Sections */}
         {MEAL_TYPES.map((type) => (
           <View key={type} style={styles.mealSection}>
-            <Text style={styles.mealTypeTitle}>{MEAL_TYPE_LABELS[type]}</Text>
+            <View style={styles.mealSectionHeader}>
+              <View style={styles.mealTypeHeader}>
+                <View style={styles.mealIconContainer}>
+                  <Ionicons 
+                    name={
+                      type === 'Breakfast' ? 'sunny' :
+                      type === 'Lunch' ? 'partly-sunny' :
+                      type === 'Dinner' ? 'moon' : 'ice-cream'
+                    } 
+                    size={18} 
+                    color={colors.primary} 
+                  />
+                </View>
+                <Text style={styles.mealTypeTitle}>{MEAL_TYPE_LABELS[type]}</Text>
+              </View>
+              {groupedMeals[type]?.length > 0 && (
+                <View style={styles.mealBadge}>
+                  <Text style={styles.mealBadgeText}>{groupedMeals[type].length}</Text>
+                </View>
+              )}
+            </View>
+
             {groupedMeals[type]?.length > 0 ? (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.mealRow}
-              >
+              <View style={styles.mealCardsContainer}>
                 {groupedMeals[type]?.map((log) => (
                   <TouchableOpacity
                     key={log.log_id}
-                    style={styles.mealCardWrapper}
                     onLongPress={() => handleDeleteFood(log.log_id)}
+                    activeOpacity={0.7}
                   >
                     <MealCard
                       meal={{
@@ -362,16 +397,29 @@ export default function FoodDiaryScreen() {
                         fat: Math.round(log.fat_g),
                         time: format(new Date(log.eaten_at), 'h:mm a'),
                         status: type,
-                        image: log.image_url ?? (log as any).imageUrl,
+                        image: log.image_url,
                       }}
                     />
                   </TouchableOpacity>
                 ))}
-              </ScrollView>
-            ) : (
-              <View style={styles.emptyMeal}>
-                <Text style={styles.emptyMealText}>Chưa ghi nhận {type}</Text>
               </View>
+            ) : (
+              <TouchableOpacity 
+                style={styles.emptyMeal}
+                onPress={() => {
+                  setMealType(type);
+                  setModalVisible(true);
+                }}
+                activeOpacity={0.7}
+              >
+                <View style={styles.emptyMealIcon}>
+                  <Ionicons name="add-circle-outline" size={40} color={colors.textLight} />
+                </View>
+                <Text style={styles.emptyMealText}>
+                  Thêm {MEAL_TYPE_LABELS[type].toLowerCase()}
+                </Text>
+                <Text style={styles.emptyMealSubtext}>Nhấn để ghi nhận món ăn</Text>
+              </TouchableOpacity>
             )}
           </View>
         ))}
@@ -466,7 +514,7 @@ export default function FoodDiaryScreen() {
 
               <View style={styles.macroRow}>
                 <View style={[styles.inputContainer, { flex: 1 }]}>
-                  <Text style={styles.label}>�?m (g)</Text>
+                  <Text style={styles.label}>Đạm (g)</Text>
                   <TextInput
                     style={styles.input}
                     placeholder="0"
@@ -477,7 +525,7 @@ export default function FoodDiaryScreen() {
                   />
                 </View>
                 <View style={[styles.inputContainer, { flex: 1 }]}>
-                  <Text style={styles.label}>Tinh b?t (g)</Text>
+                  <Text style={styles.label}>Tinh bột (g)</Text>
                   <TextInput
                     style={styles.input}
                     placeholder="0"
@@ -488,7 +536,7 @@ export default function FoodDiaryScreen() {
                   />
                 </View>
                 <View style={[styles.inputContainer, { flex: 1 }]}>
-                  <Text style={styles.label}>Ch?t b�o (g)</Text>
+                  <Text style={styles.label}>Chất béo (g)</Text>
                   <TextInput
                     style={styles.input}
                     placeholder="0"
@@ -541,7 +589,6 @@ export default function FoodDiaryScreen() {
                   onPress={() => {
                     setShowImageModal(false);
                     setSelectedImage(null);
-                    setSelectedImageBase64(null);
                   }}
                 >
                   <Text style={styles.imageModalBtnTextSecondary}>Hủy</Text>
@@ -568,102 +615,181 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5F7FA',
   },
   loadingContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
   header: {
-    justifyContent: 'center',
-    alignItems: 'center',
     backgroundColor: colors.primary,
     paddingTop: 50,
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-headerTitle: {
+  headerTitle: {
     fontSize: 20,
     fontWeight: '700',
     color: '#fff',
-    textAlign: 'center',
-    },
+  },
   summaryCard: {
     marginHorizontal: spacing.md,
-    marginTop: spacing.lg,
+    marginTop: spacing.xl,
+    marginBottom: spacing.lg,
     backgroundColor: '#fff',
     borderRadius: borderRadius.xl,
-    padding: spacing.lg,
+    padding: spacing.md,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(99, 91, 255, 0.1)',
   },
-  summaryTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.textSecondary,
-    marginBottom: spacing.md,
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-  },
-  summaryRow: {
+  summaryHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  summaryTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  summaryTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  dateBadge: {
+    backgroundColor: `${colors.primary}15`,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: borderRadius.full,
+  },
+  dateText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.primary,
+  },
+  summaryGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: spacing.sm,
   },
   summaryItem: {
     alignItems: 'center',
-    },
+    flex: 1,
+  },
+  summaryIconBg: {
+    width: 36,
+    height: 36,
+    borderRadius: borderRadius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 6,
+  },
   summaryValue: {
-    fontSize: 24,
-    fontWeight: '800',
+    fontSize: 16,
+    fontWeight: '700',
     color: colors.text,
-    letterSpacing: -0.5,
+    marginBottom: 2,
   },
   summaryLabel: {
-    fontSize: 11,
-    color: colors.textSecondary,
-    marginTop: 4,
-    fontWeight: '600',
+    fontSize: 10,
+    color: colors.textLight,
+    textAlign: 'center',
+  },
+  mealCountBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  mealCountText: {
+    fontSize: 13,
+    color: colors.textLight,
+    fontWeight: '500',
   },
   scrollContent: {
-    padding: spacing.md,
-    paddingTop: spacing.md,
+    paddingTop: 0,
     paddingBottom: 200,
   },
   mealSection: {
     marginBottom: spacing.xl,
+    paddingHorizontal: spacing.md,
   },
-  mealRow: {
+  mealSectionHeader: {
     flexDirection: 'row',
-    gap: spacing.sm,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.md,
   },
-  mealCardWrapper: {
-    width: 280,
+  mealTypeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  mealIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: borderRadius.full,
+    backgroundColor: `${colors.primary}10`,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   mealTypeTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '700',
     color: colors.text,
-    marginBottom: spacing.md,
-    letterSpacing: -0.3,
+  },
+  mealBadge: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: borderRadius.full,
+    minWidth: 24,
+    alignItems: 'center',
+  },
+  mealBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  mealCardsContainer: {
+    gap: spacing.sm,
   },
   emptyMeal: {
-    backgroundColor: '#fff',
+    backgroundColor: `${colors.textLight}05`,
     borderRadius: borderRadius.lg,
     padding: spacing.xl,
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     borderStyle: 'dashed',
+  },
+  emptyMealIcon: {
+    marginBottom: spacing.sm,
   },
   emptyMealText: {
     fontSize: 15,
-    color: colors.textSecondary,
-    fontWeight: '500',
+    color: colors.text,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  emptyMealSubtext: {
+    color: colors.textLight,
+    fontSize: 12,
   },
   fab: {
     position: 'absolute',
-    bottom: 90,
-    right: 20,
+    bottom: 30,
+    right: 16,
     width: 64,
     height: 64,
     borderRadius: 32,
@@ -675,10 +801,11 @@ headerTitle: {
     shadowOpacity: 0.35,
     shadowRadius: 16,
     elevation: 8,
+    zIndex: 999,
   },
   cameraFab: {
     position: 'absolute',
-    bottom: 170,
+    bottom: 100,
     right: 20,
     width: 56,
     height: 56,
@@ -693,6 +820,7 @@ headerTitle: {
     elevation: 6,
   },
   modalOverlay: {
+    flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'flex-end',
   },
@@ -703,7 +831,8 @@ headerTitle: {
     maxHeight: '85%',
   },
   modalHeader: {
-    justifyContent: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
     padding: spacing.md,
     borderBottomWidth: 1,
@@ -741,6 +870,7 @@ headerTitle: {
     gap: spacing.xs,
   },
   mealTypeBtn: {
+    flex: 1,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.md,
     backgroundColor: colors.background,
@@ -792,6 +922,7 @@ headerTitle: {
     borderColor: colors.primary + '40',
   },
   aiResultText: {
+    flex: 1,
     fontSize: 13,
     fontWeight: '600',
     color: colors.primary,
@@ -809,6 +940,7 @@ headerTitle: {
   },
   // Image Analysis Modal
   imageModalOverlay: {
+    flex: 1,
     backgroundColor: 'rgba(0,0,0,0.8)',
     justifyContent: 'center',
     alignItems: 'center',
@@ -854,6 +986,7 @@ headerTitle: {
     gap: spacing.md,
   },
   imageModalBtn: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
