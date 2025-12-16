@@ -18,19 +18,30 @@ export const recognizeFood = async (req, res) => {
       return res.status(400).json({ error: 'Missing base64Image' });
     }
 
-    const prompt = `Nhận diện món ăn này và TÍNH TOÁN CHÍNH XÁC dinh dưỡng, trả về TIẾNG VIỆT:
+    const prompt = `Bạn là chuyên gia dinh dưỡng. Phân tích ảnh này và tính toán CHÍNH XÁC:
+
+Bước 1: Nhận diện món ăn
+Bước 2: Ước lượng KHỐI LƯỢNG từ ảnh (dựa vào kích thước, đĩa/bát/gói)
+Bước 3: Tính dinh dưỡng DỰA TRÊN KHỐI LƯỢNG ƯỚC TÍNH
+
+Ví dụ thực tế:
+- 1 gói mì ăn liền (85g): 380 calo, 10g protein, 55g carbs, 14g fat
+- 1 bát phở (500g): 450 calo, 25g protein, 65g carbs, 8g fat  
+- 1 đĩa cơm gà (350g): 580 calo, 35g protein, 70g carbs, 15g fat
+- Salad trộn (200g): 150 calo, 5g protein, 12g carbs, 8g fat
+
+Trả về JSON (TIẾNG VIỆT, tên ngắn 4-5 từ):
 {
-  "food_name": "tên món ăn (TỐI ĐA 4-5 TỪ, NGẮN GỌN)",
-  "portion_size": "khối lượng ước tính",
-  "calories": [TÍNH TOÁN THỰC TẾ dựa trên món ăn],
-  "protein": [gram protein THỰC TẾ],
-  "carbs": [gram carbs THỰC TẾ],
-  "fats": [gram chất béo THỰC TẾ],
-  "sugar": [gram đường THỰC TẾ]
+  "food_name": "...",
+  "portion_size": "...",
+  "calories": <số integer>,
+  "protein": <số integer>,
+  "carbs": <số integer>,
+  "fats": <số integer>,
+  "sugar": <số integer>
 }
-QUAN TRỌNG: Phải tính toán dinh dưỡng CHÍNH XÁC cho món ăn cụ thể, KHÔNG dùng số mẫu.
-Ví dụ tên: "Mì Omachi sốt bò" (ngắn gọn, tiếng Việt)
-Tất cả số phải là integer. Không markdown, chỉ JSON.`;
+
+CHÚ Ý: Phải PHÂN TÍCH ẢNH để ước lượng khối lượng, rồi tính toán chính xác. Món ăn khác nhau có dinh dưỡng KHÁC NHAU hoàn toàn.`;
 
     // Extract base64 data from data URI
     const base64Data = base64Image.includes('base64,') 
@@ -218,19 +229,30 @@ export const recognizeAndSaveFood = async (req, res) => {
       return res.status(400).json({ error: 'Missing base64Image' });
     }
 
-    const prompt = `Nhận diện món ăn này và TÍNH TOÁN CHÍNH XÁC dinh dưỡng, trả về TIẾNG VIỆT:
+    const prompt = `Bạn là chuyên gia dinh dưỡng. Phân tích ảnh này và tính toán CHÍNH XÁC:
+
+Bước 1: Nhận diện món ăn
+Bước 2: Ước lượng KHỐI LƯỢNG từ ảnh (dựa vào kích thước, đĩa/bát/gói)
+Bước 3: Tính dinh dưỡng DỰA TRÊN KHỐI LƯỢNG ƯỚC TÍNH
+
+Ví dụ thực tế:
+- 1 gói mì ăn liền (85g): 380 calo, 10g protein, 55g carbs, 14g fat
+- 1 bát phở (500g): 450 calo, 25g protein, 65g carbs, 8g fat  
+- 1 đĩa cơm gà (350g): 580 calo, 35g protein, 70g carbs, 15g fat
+- Salad trộn (200g): 150 calo, 5g protein, 12g carbs, 8g fat
+
+Trả về JSON (TIẾNG VIỆT, tên ngắn 4-5 từ):
 {
-  "food_name": "tên món ăn (TỐI ĐA 4-5 TỪ, NGẮN GỌN)",
-  "portion_size": "khối lượng ước tính",
-  "calories": [TÍNH TOÁN THỰC TẾ dựa trên món ăn],
-  "protein": [gram protein THỰC TẾ],
-  "carbs": [gram carbs THỰC TẾ],
-  "fats": [gram chất béo THỰC TẾ],
-  "sugar": [gram đường THỰC TẾ]
+  "food_name": "...",
+  "portion_size": "...",
+  "calories": <số integer>,
+  "protein": <số integer>,
+  "carbs": <số integer>,
+  "fats": <số integer>,
+  "sugar": <số integer>
 }
-QUAN TRỌNG: Phải tính toán dinh dưỡng CHÍNH XÁC cho món ăn cụ thể, KHÔNG dùng số mẫu.
-Ví dụ tên: "Mì Omachi sốt bò" (ngắn gọn, tiếng Việt)
-Tất cả số phải là integer. Không markdown, chỉ JSON.`;
+
+CHÚ Ý: Phải PHÂN TÍCH ẢNH để ước lượng khối lượng, rồi tính toán chính xác. Món ăn khác nhau có dinh dưỡng KHÁC NHAU hoàn toàn.`;
 
     // Extract base64 data from data URI
     const base64Data = base64Image.includes('base64,') 
