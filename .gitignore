@@ -37,8 +37,8 @@ dist/
 web-build/
 
 # Prisma
-prisma/migrations/
-!prisma/migrations/.gitkeep
+# Keep migrations for deployment
+# prisma/migrations/
 prisma/.env
 
 # Build output
