@@ -118,33 +118,33 @@ export default function FoodDiaryScreen() {
   const analyzeImage = async (imageUri: string) => {
     setAnalyzingImage(true);
     try {
-      // Simulate AI analysis (replace with actual API call)
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const result = await api.analyzeFoodImage(imageUri);
       
-      // Mock AI response - in production, call actual AI API
-      const mockResults = [
-        { foodName: 'Gà nướng với quinoa', calories: 680, protein: 48, carbs: 45, fat: 28, confidence: 95 },
-        { foodName: 'Cá hồi nướng với khoai lang', calories: 650, protein: 45, carbs: 52, fat: 22, confidence: 92 },
-        { foodName: 'Salad gà với rau xanh', calories: 420, protein: 38, carbs: 25, fat: 18, confidence: 88 },
-        { foodName: 'Bò xào với bông cải xanh', calories: 670, protein: 52, carbs: 28, fat: 35, confidence: 90 },
-        { foodName: 'Cơm gà', calories: 550, protein: 35, carbs: 65, fat: 15, confidence: 85 },
-      ];
-      
-      const randomResult = mockResults[Math.floor(Math.random() * mockResults.length)];
-      setAiResult(randomResult);
+      setAiResult({
+        foodName: result.food_name,
+        calories: result.calories,
+        protein: result.protein_g,
+        carbs: result.carbs_g,
+        fat: result.fat_g,
+        confidence: result.confidence,
+      });
       
       // Pre-fill form with AI results
-      setFoodName(randomResult.foodName);
-      setCalories(String(randomResult.calories));
-      setProtein(String(randomResult.protein));
-      setCarbs(String(randomResult.carbs));
-      setFat(String(randomResult.fat));
+      setFoodName(result.food_name);
+      setCalories(String(result.calories));
+      setProtein(String(result.protein_g));
+      setCarbs(String(result.carbs_g));
+      setFat(String(result.fat_g));
       
       setShowImageModal(false);
       setModalVisible(true);
       
-    } catch (error) {
-      Alert.alert('Lỗi', 'Không thể phân tích ảnh. Vui lòng thử lại.');
+    } catch (error: any) {
+      console.error('Food recognition error:', error);
+      Alert.alert(
+        'Lỗi nhận diện',
+        error.message || 'Không thể phân tích ảnh. Vui lòng thử lại.'
+      );
     } finally {
       setAnalyzingImage(false);
     }
