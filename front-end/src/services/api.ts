@@ -284,12 +284,14 @@ export const api = {
         }
       );
 
+      console.log('🔍 AI Response:', result.data);
+
       return {
         food_name: result.data.foodName,
         calories: Math.round(result.data.calories),
         protein_g: Math.round(result.data.protein),
         carbs_g: Math.round(result.data.carbs),
-        fat_g: Math.round(result.data.fats),
+        fat_g: Math.round(result.data.fat),
         confidence: result.data.confidence,
       };
     } catch (error: any) {
