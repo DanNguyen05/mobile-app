@@ -437,9 +437,9 @@ Trả về JSON (tên TIẾNG VIỆT ngắn gọn):
       // Fallback: return default values
       return res.json({
         success: false,
-        error: 'KhÃƒÂ´ng thÃ¡Â»Æ’ nhÃ¡ÂºÂ­n diÃ¡Â»â€¡n Ã„â€˜Ã¡Â»â€œ Ã„Æ’n tÃ¡Â»Â« Ã¡ÂºÂ£nh',
+        error: 'Không thể nhận diện đồ ăn từ ảnh',
         data: {
-          foodName: 'KhÃƒÂ´ng xÃƒÂ¡c Ã„â€˜Ã¡Â»â€¹nh',
+          foodName: 'Không xác định',
           amount: '100g',
           calories: 0,
           protein: 0,
@@ -601,12 +601,12 @@ Calories consumed today: ${dailyIntake} kcal (${caloriePercent}% of TDEE)
 User request: "${userQuery || 'Generate today\'s workout plan'}"
 
 GUIDELINES
-- <30% TDEE Ã¢â€ â€™ light (yoga, walking)
-- 30-70% Ã¢â€ â€™ moderate
-- >70% Ã¢â€ â€™ intense or active recovery
-- Select 1Ã¢â‚¬â€œ3 workouts from the list below only
-- Total estimated burn: 250Ã¢â‚¬â€œ600 kcal
-- Order: Strength/Cardio FIRST Ã¢â€ â€™ Yoga/Recovery LAST
+- <30% TDEE  light (yoga, walking)
+- 30-70%  moderate
+- >70%  intense or active recovery
+- Select 1-3 workouts from the list below only
+- Total estimated burn: 250-600 kcal
+- Order: Strength/Cardio FIRST  Yoga/Recovery LAST
 
 AVAILABLE WORKOUTS (must match exactly):
 ${AVAILABLE_PLANS.map((p, i) => `${i + 1}. ${p}`).join('\n')}
