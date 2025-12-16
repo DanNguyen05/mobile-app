@@ -18,17 +18,18 @@ export const recognizeFood = async (req, res) => {
       return res.status(400).json({ error: 'Missing base64Image' });
     }
 
-    const prompt = `Nhận diện món ăn này và trả về TIẾNG VIỆT, chỉ JSON:
+    const prompt = `Nhận diện món ăn này và TÍNH TOÁN CHÍNH XÁC dinh dưỡng, trả về TIẾNG VIỆT:
 {
   "food_name": "tên món ăn (TỐI ĐA 4-5 TỪ, NGẮN GỌN)",
-  "portion_size": "100g",
-  "calories": 400,
-  "protein": 20,
-  "carbs": 50,
-  "fats": 10,
-  "sugar": 5
+  "portion_size": "khối lượng ước tính",
+  "calories": [TÍNH TOÁN THỰC TẾ dựa trên món ăn],
+  "protein": [gram protein THỰC TẾ],
+  "carbs": [gram carbs THỰC TẾ],
+  "fats": [gram chất béo THỰC TẾ],
+  "sugar": [gram đường THỰC TẾ]
 }
-Ví dụ: "Mì Omachi sốt bò" thay vì "Omachi Mixed Noodles..."
+QUAN TRỌNG: Phải tính toán dinh dưỡng CHÍNH XÁC cho món ăn cụ thể, KHÔNG dùng số mẫu.
+Ví dụ tên: "Mì Omachi sốt bò" (ngắn gọn, tiếng Việt)
 Tất cả số phải là integer. Không markdown, chỉ JSON.`;
 
     // Extract base64 data from data URI
@@ -217,17 +218,18 @@ export const recognizeAndSaveFood = async (req, res) => {
       return res.status(400).json({ error: 'Missing base64Image' });
     }
 
-    const prompt = `Nhận diện món ăn này và trả về TIẾNG VIỆT, chỉ JSON:
+    const prompt = `Nhận diện món ăn này và TÍNH TOÁN CHÍNH XÁC dinh dưỡng, trả về TIẾNG VIỆT:
 {
   "food_name": "tên món ăn (TỐI ĐA 4-5 TỪ, NGẮN GỌN)",
-  "portion_size": "100g",
-  "calories": 400,
-  "protein": 20,
-  "carbs": 50,
-  "fats": 10,
-  "sugar": 5
+  "portion_size": "khối lượng ước tính",
+  "calories": [TÍNH TOÁN THỰC TẾ dựa trên món ăn],
+  "protein": [gram protein THỰC TẾ],
+  "carbs": [gram carbs THỰC TẾ],
+  "fats": [gram chất béo THỰC TẾ],
+  "sugar": [gram đường THỰC TẾ]
 }
-Ví dụ: "Mì Omachi sốt bò" thay vì "Omachi Mixed Noodles..."
+QUAN TRỌNG: Phải tính toán dinh dưỡng CHÍNH XÁC cho món ăn cụ thể, KHÔNG dùng số mẫu.
+Ví dụ tên: "Mì Omachi sốt bò" (ngắn gọn, tiếng Việt)
 Tất cả số phải là integer. Không markdown, chỉ JSON.`;
 
     // Extract base64 data from data URI
