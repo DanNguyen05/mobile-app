@@ -18,9 +18,9 @@ export const recognizeFood = async (req, res) => {
       return res.status(400).json({ error: 'Missing base64Image' });
     }
 
-    const prompt = `Identify this food and return ONLY valid JSON:
+    const prompt = `Nhận diện món ăn này và trả về TIẾNG VIỆT, chỉ JSON:
 {
-  "food_name": "dish name",
+  "food_name": "tên món ăn (TỐI ĐA 4-5 TỪ, NGẮN GỌN)",
   "portion_size": "100g",
   "calories": 400,
   "protein": 20,
@@ -28,7 +28,8 @@ export const recognizeFood = async (req, res) => {
   "fats": 10,
   "sugar": 5
 }
-All numbers must be integers. No markdown, no text, ONLY JSON.`;
+Ví dụ: "Mì Omachi sốt bò" thay vì "Omachi Mixed Noodles..."
+Tất cả số phải là integer. Không markdown, chỉ JSON.`;
 
     // Extract base64 data from data URI
     const base64Data = base64Image.includes('base64,') 
@@ -216,9 +217,9 @@ export const recognizeAndSaveFood = async (req, res) => {
       return res.status(400).json({ error: 'Missing base64Image' });
     }
 
-    const prompt = `Identify this food and return ONLY valid JSON:
+    const prompt = `Nhận diện món ăn này và trả về TIẾNG VIỆT, chỉ JSON:
 {
-  "food_name": "dish name",
+  "food_name": "tên món ăn (TỐI ĐA 4-5 TỪ, NGẮN GỌN)",
   "portion_size": "100g",
   "calories": 400,
   "protein": 20,
@@ -226,7 +227,8 @@ export const recognizeAndSaveFood = async (req, res) => {
   "fats": 10,
   "sugar": 5
 }
-All numbers must be integers. No markdown, no text, ONLY JSON.`;
+Ví dụ: "Mì Omachi sốt bò" thay vì "Omachi Mixed Noodles..."
+Tất cả số phải là integer. Không markdown, chỉ JSON.`;
 
     // Extract base64 data from data URI
     const base64Data = base64Image.includes('base64,') 
