@@ -589,36 +589,36 @@ export const generateExercisePlan = async (req, res) => {
       'Core & Abs Crusher',
     ];
 
-    const prompt = `You are a professional fitness coach. Create a safe and personalized workout plan for today.
+    const prompt = `Bạn là huấn luyện viên thể hình chuyên nghiệp. Tạo kế hoạch tập luyện an toàn và được cá nhân hóa cho hôm nay.
 
-USER PROFILE
-Gender: ${gender}
-Age: ${age}
-Weight: ${weight}kg | Height: ${height}cm | BMI: ${bmi}
-Goal: ${userProfile.goal === 'lose_weight' ? 'Fat loss' : 'Maintenance / Muscle gain'}
+HỒ SƠ NGƯỜI DÙNG
+Giới tính: ${gender === 'Male' ? 'Nam' : 'Nữ'}
+Tuổi: ${age}
+Cân nặng: ${weight}kg | Chiều cao: ${height}cm | BMI: ${bmi}
+Mục tiêu: ${userProfile.goal === 'lose_weight' ? 'Giảm mỡ' : 'Duy trì / Tăng cơ'}
 TDEE: ${tdee} kcal
-Calories consumed today: ${dailyIntake} kcal (${caloriePercent}% of TDEE)
-User request: "${userQuery || 'Generate today\'s workout plan'}"
+Lượng calo đã tiêu thụ hôm nay: ${dailyIntake} kcal (${caloriePercent}% của TDEE)
+Yêu cầu: "${userQuery || 'Tạo kế hoạch tập luyện hôm nay'}"
 
-GUIDELINES
-- <30% TDEE  light (yoga, walking)
-- 30-70%  moderate
-- >70%  intense or active recovery
-- Select 1-3 workouts from the list below only
-- Total estimated burn: 250-600 kcal
-- Order: Strength/Cardio FIRST  Yoga/Recovery LAST
+HƯỚNG DẪN
+- <30% TDEE → nhẹ nhàng (yoga, đi bộ)
+- 30-70% → vừa phải
+- >70% → cường độ cao hoặc phục hồi tích cực
+- Chọn 1-3 bài tập từ danh sách dưới đây
+- Tổng lượng đốt ước tính: 250-600 kcal
+- Thứ tự: Sức mạnh/Cardio TRƯỚC → Yoga/Phục hồi SAU
 
-AVAILABLE WORKOUTS (must match exactly):
+CÁC BÀI TẬP KHẢ DỤNG (phải khớp chính xác):
 ${AVAILABLE_PLANS.map((p, i) => `${i + 1}. ${p}`).join('\n')}
 
-RETURN ONLY VALID JSON. NO EXTRA TEXT:
+CHỈ TRẢ VỀ JSON HỢP LỆ. KHÔNG CÓ VĂN BẢN THÊM:
 {
-  "summary": "Short summary",
+  "summary": "Tóm tắt ngắn gọn",
   "intensity": "light|moderate|intense",
   "totalBurnEstimate": "400-500 kcal",
-  "advice": "Short advice",
+  "advice": "Lời khuyên ngắn gọn",
   "exercises": [
-    { "name": "Exact workout name from list", "duration": "20 min", "reason": "Why this fits" }
+    { "name": "Tên bài tập chính xác từ danh sách", "duration": "20 phút", "reason": "Lý do phù hợp" }
   ]
 }`;
 
@@ -630,7 +630,7 @@ RETURN ONLY VALID JSON. NO EXTRA TEXT:
       body: JSON.stringify({
         contents: [{
           parts: [{
-            text: 'Return only valid JSON. No explanations.\n\n' + prompt
+            text: 'Chỉ trả về JSON hợp lệ. Không giải thích.\n\n' + prompt
           }]
         }],
         generationConfig: {
